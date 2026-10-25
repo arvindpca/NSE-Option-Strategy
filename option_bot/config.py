@@ -55,6 +55,7 @@ MAX_TRADES_PER_DAY = 4
 SL_PCT = 0.25               # premium 25% gira -> exit
 TARGET_PCT = 0.50           # premium 50% badha -> exit
 BREAKEVEN_AT = 0.25         # premium +25% -> SL ko entry pe le aao
+USE_OR_FAIL_EXIT = True    # stock wapas range ke andar 15-min close -> exit
 COST_PER_TRADE = 60.0       # brokerage + charges (round trip, approx Rs)
 SLIPPAGE_PCT = 0.01         # 1% premium slippage (paper me realistic rehne ke liye)
 

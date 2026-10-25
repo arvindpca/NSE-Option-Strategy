@@ -108,7 +108,7 @@ def manage_open(positions, now, today_trades_pnl):
             if r:
                 done = (r[1], r[0])
                 break
-        if not done:
+        if not done and C.USE_OR_FAIL_EXIT:
             # Stock wapas Opening Range ke andar band? (pichhli poori 15-min candle)
             uc = A.candles(pos["stock_token"], "NSE", "FIFTEEN_MINUTE",
                            now.replace(hour=9, minute=15, second=0, microsecond=0), now)
@@ -251,7 +251,7 @@ def main():
     master = A.load_master()
     contracts = A.option_contracts(master)
     universe = A.fno_universe(master)
-    if os.getenv("MAX_SYMBOLS"):
+    if int(os.getenv("MAX_SYMBOLS", "0") or 0) > 0:
         universe = universe.head(int(os.getenv("MAX_SYMBOLS")))
     print(f"{now:%Y-%m-%d %H:%M} | F&O stocks {len(universe)} | open {len(positions)}", flush=True)
 

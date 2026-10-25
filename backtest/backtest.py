@@ -102,7 +102,7 @@ def simulate(day: pd.DataFrame, i: int, side: str, iv: float, lot: int):
             reason, exit_px, t_exit = r[0], r[1], t_end
             break
         close_p = prem(c["close"], t_end)
-        if S.invalidated(side, c["close"], sig["or_high"], sig["or_low"]):
+        if C.USE_OR_FAIL_EXIT and S.invalidated(side, c["close"], sig["or_high"], sig["or_low"]):
             reason, exit_px, t_exit = "OR_FAIL", close_p, t_end
             break
         if t_end.strftime("%H:%M") >= C.EXIT_AT:
@@ -118,13 +118,16 @@ def simulate(day: pd.DataFrame, i: int, side: str, iv: float, lot: int):
 
 
 # ---------------------------------------------------------------- run
-def run():
-    if os.getenv("OFFLINE") != "1":
-        download()
-    nifty = read_csv(DATA / "NIFTY.csv")
-    lots = pd.read_csv(DATA / "_lots.csv").set_index("name")["lot"].to_dict() if (DATA / "_lots.csv").exists() else {}
+VARIANTS = [
+    ("A: abhi wale rules (v1)", {}),
+    ("B: breakout-fail exit hatao", {"USE_OR_FAIL_EXIT": False}),
+    ("C: B + entry 10:15 ke baad", {"USE_OR_FAIL_EXIT": False, "ENTRY_FROM": "10:15"}),
+    ("D: C + SL 35%", {"USE_OR_FAIL_EXIT": False, "ENTRY_FROM": "10:15", "SL_PCT": 0.35}),
+]
+
+
+def compute(files, nifty, lots):
     cands = []
-    files = sorted(p for p in DATA.glob("*.csv") if p.stem not in ("NIFTY", "_lots"))
     for p in files:
         df = read_csv(p)
         if len(df) < 100:
@@ -144,9 +147,7 @@ def run():
                 cands.append(tr)
     print(f"Signals (trade ban sakte the): {len(cands)}", flush=True)
     if not cands:
-        print("Koi trade nahi bana - data / rules check karo")
-        return
-
+        return pd.DataFrame()
     # portfolio rules: max open + max trades per day, same time pe zyada volume pehle
     cands.sort(key=lambda x: (x["entry_time"], -x["vol_x"]))
     taken, open_ = [], []
@@ -159,8 +160,28 @@ def run():
         open_.append(t)
         per_day[d] = per_day.get(d, 0) + 1
         taken.append(t)
-    tr = pd.DataFrame(taken).sort_values("entry_time").reset_index(drop=True)
-    report(tr, len(files), nifty)
+    return pd.DataFrame(taken).sort_values("entry_time").reset_index(drop=True)
+
+
+def run():
+    if os.getenv("OFFLINE") != "1":
+        download()
+    nifty = read_csv(DATA / "NIFTY.csv")
+    lots = pd.read_csv(DATA / "_lots.csv").set_index("name")["lot"].to_dict() if (DATA / "_lots.csv").exists() else {}
+    files = sorted(p for p in DATA.glob("*.csv") if p.stem not in ("NIFTY", "_lots"))
+    base = {k: getattr(C, k) for k in ("USE_OR_FAIL_EXIT", "ENTRY_FROM", "SL_PCT", "TARGET_PCT", "BREAKEVEN_AT")}
+    results = []
+    for name, changes in VARIANTS:
+        for k, v in {**base, **changes}.items():
+            setattr(C, k, v)
+        print(f"--- {name}", flush=True)
+        results.append((name, compute(files, nifty, lots)))
+    for k, v in base.items():
+        setattr(C, k, v)
+    if results[0][1].empty:
+        print("Koi trade nahi bana - data / rules check karo")
+        return
+    report(results[0][1], len(files), nifty, results)
 
 
 def stats(t: pd.DataFrame) -> str:
@@ -174,7 +195,7 @@ def stats(t: pd.DataFrame) -> str:
             f"Avg Rs {t['pnl'].mean():,.0f} | PF {pf:.2f} | Max DD Rs {dd:,.0f}")
 
 
-def report(tr: pd.DataFrame, n_stocks: int, nifty: pd.DataFrame):
+def report(tr: pd.DataFrame, n_stocks: int, nifty: pd.DataFrame, results=()):
     stamp = datetime.now(IST).strftime("%Y-%m-%d_%H%M")
     out = OUT / stamp
     out.mkdir(parents=True, exist_ok=True)
@@ -195,6 +216,9 @@ def report(tr: pd.DataFrame, n_stocks: int, nifty: pd.DataFrame):
         "DHYAN DE: premium formula se andaaza hai (asli option data nahi). Asli me IV badalta hai,",
         "spread hota hai. Isliye pehle 3-4 hafte PAPER trading ka result dekho, phir hi paisa lagao.",
         "",
+        "VERSIONS KA MUKABLA (same data, sirf rule badle):",
+        *[f"  {n:32s} {stats(t)}" for n, t in results],
+        "", "Neeche ki detail: version A (abhi wale rules)", "",
         "KUL:      " + stats(tr),
         "1st half: " + stats(tr[tr["entry_time"] < half]),
         "2nd half: " + stats(tr[tr["entry_time"] >= half]),
