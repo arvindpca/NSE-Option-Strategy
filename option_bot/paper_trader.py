@@ -1,0 +1,285 @@
+#!/usr/bin/env python3
+"""
+LIVE PAPER TRADER  (koi asli order nahi lagta)
+==============================================
+GitHub Actions har ~15 min market time me chalata hai. Har run me:
+  1. Khuli paper positions check -> SL / Target / Breakeven / Breakout fail / 3:15 exit
+  2. Naye signal dhoondo (F&O stocks, 15-min) -> option chuno -> paper entry
+  3. Telegram alert + state/ folder me log (repo me commit hota hai)
+
+State files (state/):
+  positions.json     abhi khule trades
+  trades.csv         band trades (P&L ke saath)
+  signals_log.csv    har signal (liya / kyun chhoda)
+  meta.json          aaj ke counters
+  STATUS.md          readable summary
+
+Env: ANGEL_* secrets, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+     FORCE_RUN=1 (market time ke bahar bhi chalao - testing)
+     MAX_SYMBOLS=20 (testing ke liye kam stocks)
+"""
+import csv
+import json
+import os
+import sys
+from datetime import datetime, timedelta
+from pathlib import Path
+from zoneinfo import ZoneInfo
+
+import pandas as pd
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+from option_bot import angel_api as A          # noqa: E402
+from option_bot import config as C             # noqa: E402
+from option_bot import exits as X              # noqa: E402
+from option_bot import strategy as S           # noqa: E402
+from option_bot.option_picker import pick_contract  # noqa: E402
+from option_bot.telegram import send           # noqa: E402
+
+IST = ZoneInfo("Asia/Kolkata")
+STATE = Path(os.getenv("STATE_DIR", str(ROOT / "state")))
+POS_F, TRADES_F, SIG_F = STATE / "positions.json", STATE / "trades.csv", STATE / "signals_log.csv"
+META_F, STATUS_F = STATE / "meta.json", STATE / "STATUS.md"
+
+TRADE_COLS = ["date", "stock", "side", "option", "expiry", "strike", "lot", "qty", "entry_time", "entry",
+              "exit_time", "exit", "reason", "pnl", "spot_entry"]
+SIG_COLS = ["time", "stock", "side", "spot", "vol_x", "action", "note"]
+
+
+# ---------------------------------------------------------------- small helpers
+def hm(t: datetime) -> str:
+    return t.strftime("%H:%M")
+
+
+def inr(x: float) -> str:
+    s = f"{abs(x):,.0f}"
+    return ("-" if x < 0 else "+") + "Rs " + s
+
+
+def load_json(p, default):
+    try:
+        return json.loads(p.read_text())
+    except Exception:  # noqa: BLE001
+        return default
+
+
+def append_csv(path: Path, cols, row: dict):
+    new = not path.exists()
+    with path.open("a", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=cols)
+        if new:
+            w.writeheader()
+        w.writerow({k: row.get(k, "") for k in cols})
+
+
+def completed(df: pd.DataFrame, now: datetime, minutes: int) -> pd.DataFrame:
+    """Sirf poori ho chuki candles (start + interval <= abhi)."""
+    if df.empty:
+        return df
+    return df[df["time"] + pd.Timedelta(minutes=minutes) <= pd.Timestamp(now)]
+
+
+# ---------------------------------------------------------------- exits
+def close_position(pos, price, reason, now, trades_today):
+    qty = pos["qty"]
+    p = X.pnl(pos["entry"], price, qty)
+    row = {**pos, "exit_time": now.strftime("%Y-%m-%d %H:%M"), "exit": round(price, 2), "reason": reason, "pnl": p}
+    append_csv(TRADES_F, TRADE_COLS, row)
+    emoji = {"TARGET": "✅", "SL": "🛑", "BREAKEVEN": "⚪", "OR_FAIL": "↩️", "TIME": "⏰"}.get(reason, "•")
+    send(f"{emoji} <b>PAPER EXIT</b> {pos['option']}\n"
+         f"{pos['stock']} {pos['side']} | Entry {pos['entry']} → Exit {round(price, 2)}\n"
+         f"Reason: {reason} | P&L: <b>{inr(p)}</b> ({qty} qty)")
+    trades_today.append(p)
+    print(f"EXIT {pos['option']} {reason} {pos['entry']}->{price:.2f} pnl {p}", flush=True)
+
+
+def manage_open(positions, now, today_trades_pnl):
+    still = []
+    for pos in positions:
+        last = datetime.fromisoformat(pos["last_check"])
+        oc = A.candles(pos["opt_token"], "NFO", "FIVE_MINUTE", last - timedelta(minutes=5), now)
+        oc = completed(oc, now, 5)
+        oc = oc[oc["time"] >= pd.Timestamp(last)]
+        done = None
+        for _, c in oc.iterrows():
+            r = X.step(pos, c["open"], c["high"], c["low"])
+            if r:
+                done = (r[1], r[0])
+                break
+        if not done:
+            # Stock wapas Opening Range ke andar band? (pichhli poori 15-min candle)
+            uc = A.candles(pos["stock_token"], "NSE", "FIFTEEN_MINUTE",
+                           now.replace(hour=9, minute=15, second=0, microsecond=0), now)
+            uc = completed(uc, now, 15)
+            uc = uc[uc["time"] > pd.Timestamp(datetime.fromisoformat(pos["entry_candle"]))]
+            if len(uc) and S.invalidated(pos["side"], uc["close"].iloc[-1], pos["or_high"], pos["or_low"]):
+                px = A.ltp("NFO", pos["option"], pos["opt_token"]) or (oc["close"].iloc[-1] if len(oc) else pos["entry"])
+                done = (px, "OR_FAIL")
+        if not done and hm(now) >= C.EXIT_AT:
+            px = A.ltp("NFO", pos["option"], pos["opt_token"]) or (oc["close"].iloc[-1] if len(oc) else pos["entry"])
+            done = (px, "TIME")
+        if done:
+            close_position(pos, done[0], done[1], now, today_trades_pnl)
+        else:
+            pos["last_check"] = (oc["time"].iloc[-1] + pd.Timedelta(minutes=5)).isoformat() if len(oc) else pos["last_check"]
+            still.append(pos)
+    return still
+
+
+# ---------------------------------------------------------------- entries
+def scan(now, universe, contracts, positions, meta):
+    today = now.date()
+    start = now - timedelta(days=8)          # indicators ke warm-up ke liye pichhle din bhi
+    nifty = completed(A.candles(C.NIFTY_TOKEN, "NSE", "FIFTEEN_MINUTE", start, now), now, 15)
+    if nifty.empty:
+        print("Nifty data nahi mila - scan skip", flush=True)
+        return []
+    found = []
+    for _, u in universe.iterrows():
+        df = completed(A.candles(u["token"], "NSE", "FIFTEEN_MINUTE", start, now), now, 15)
+        if len(df) < 30 or df["time"].iloc[-1].date() != today:
+            continue
+        sig = S.add_signals(df, nifty)
+        recent = sig[sig["date"] == today].tail(C.SIGNAL_LOOKBACK_CANDLES)
+        hit = recent[recent["signal"] != ""]
+        if hit.empty:
+            continue
+        r = hit.iloc[-1]
+        # breakout abhi bhi zinda hai? (aakhri candle OR ke bahar)
+        last_close = sig["close"].iloc[-1]
+        if S.invalidated(r["signal"], last_close, r["or_high"], r["or_low"]):
+            continue
+        found.append({"stock": u["name"], "token": u["token"], "side": r["signal"], "spot": last_close,
+                      "candle": r["time"], "or_high": r["or_high"], "or_low": r["or_low"],
+                      "vol_x": round(r["volume"] / r["vol_avg"], 2)})
+    found.sort(key=lambda x: -x["vol_x"])   # sabse zyada volume uchhal pehle
+    return found
+
+
+def try_enter(cand, now, contracts, positions, meta):
+    log = {"time": now.strftime("%Y-%m-%d %H:%M"), "stock": cand["stock"], "side": cand["side"],
+           "spot": round(cand["spot"], 2), "vol_x": cand["vol_x"]}
+    key = f"{cand['stock']}|{cand['side']}"
+    if cand["stock"] in meta["stocks_today"]:
+        return None  # aaj is stock me already trade / signal ho chuka - dobara log nahi
+    meta["stocks_today"].append(cand["stock"])
+
+    def skip(note):
+        append_csv(SIG_F, SIG_COLS, {**log, "action": "SKIP", "note": note})
+        print(f"SKIP {key}: {note}", flush=True)
+
+    if len(positions) >= C.MAX_OPEN:
+        return skip(f"max {C.MAX_OPEN} position khuli")
+    if meta["trades"] >= C.MAX_TRADES_PER_DAY:
+        return skip(f"aaj ke {C.MAX_TRADES_PER_DAY} trade ho gaye")
+    con = pick_contract(contracts, cand["stock"], cand["spot"], cand["side"], now.date())
+    if con is None:
+        return skip("option contract nahi mila")
+    oc = A.candles(con["token"], "NFO", "FIVE_MINUTE", now.replace(hour=9, minute=15, second=0, microsecond=0), now)
+    opt_vol = float(oc["volume"].sum()) if len(oc) else 0.0
+    price = A.ltp("NFO", con["symbol"], con["token"]) or (float(oc["close"].iloc[-1]) if len(oc) else None)
+    if not price or price < C.MIN_PREMIUM:
+        return skip(f"premium {price} bahut kam / nahi mila")
+    if opt_vol < C.MIN_OPTION_VOL_LOTS * con["lot"]:
+        return skip(f"option illiquid (aaj volume {opt_vol:.0f})")
+    qty = int(con["lot"]) * C.LOTS_PER_TRADE
+    cost = price * qty
+    if cost > C.MAX_COST_PER_TRADE:
+        return skip(f"1 lot ki cost Rs {cost:,.0f} > Rs {C.MAX_COST_PER_TRADE:,}")
+
+    lv = X.new_levels(price)
+    pos = {"date": now.strftime("%Y-%m-%d"), "stock": cand["stock"], "stock_token": cand["token"],
+           "side": cand["side"], "option": con["symbol"], "opt_token": con["token"],
+           "expiry": str(con["expiry_d"]), "strike": float(con["strike_rs"]), "lot": int(con["lot"]),
+           "qty": qty, "entry_time": now.strftime("%Y-%m-%d %H:%M"), "entry": round(price, 2),
+           "sl": lv["sl"], "target": lv["target"], "spot_entry": round(cand["spot"], 2),
+           "or_high": float(cand["or_high"]), "or_low": float(cand["or_low"]),
+           "entry_candle": pd.Timestamp(cand["candle"]).isoformat(), "last_check": now.isoformat()}
+    append_csv(SIG_F, SIG_COLS, {**log, "action": "ENTRY", "note": con["symbol"]})
+    meta["trades"] += 1
+    arrow = "🟢 BUY CALL" if cand["side"] == "CE" else "🔴 BUY PUT"
+    send(f"{arrow} <b>(PAPER)</b>\n<b>{con['symbol']}</b>\n"
+         f"Stock: {cand['stock']} @ {cand['spot']:.2f} | Vol {cand['vol_x']}x\n"
+         f"Premium: <b>{price:.2f}</b> | Lot {con['lot']} | Cost Rs {cost:,.0f}\n"
+         f"SL {lv['sl']} (-{int(C.SL_PCT*100)}%) | Target {lv['target']} (+{int(C.TARGET_PCT*100)}%)\n"
+         f"Exit 3:15 PM tak | Breakout fail = exit")
+    print(f"ENTRY {con['symbol']} @ {price}", flush=True)
+    return pos
+
+
+# ---------------------------------------------------------------- status
+def write_status(positions, now):
+    lines = [f"# Option Paper Trader - status ({now:%d %b %Y %H:%M} IST)", ""]
+    lines.append(f"## Khuli positions ({len(positions)})")
+    if positions:
+        lines.append("| Option | Side | Entry | SL | Target | Time |\n|---|---|---|---|---|---|")
+        for p in positions:
+            lines.append(f"| {p['option']} | {p['side']} | {p['entry']} | {p['sl']} | {p['target']} | {p['entry_time'][11:]} |")
+    else:
+        lines.append("Koi nahi")
+    if TRADES_F.exists():
+        t = pd.read_csv(TRADES_F)
+        if len(t):
+            wins = (t["pnl"] > 0).mean() * 100
+            lines += ["", "## Ab tak ka result (sab paper trades)",
+                      f"Trades {len(t)} | Win {wins:.0f}% | Kul P&L {inr(t['pnl'].sum())} | "
+                      f"Avg {inr(t['pnl'].mean())}", "",
+                      "| Date | Option | Reason | Entry | Exit | P&L |\n|---|---|---|---|---|---|"]
+            for _, r in t.tail(15).iloc[::-1].iterrows():
+                lines.append(f"| {r['date']} | {r['option']} | {r['reason']} | {r['entry']} | {r['exit']} | {r['pnl']:.0f} |")
+    STATUS_F.write_text("\n".join(lines) + "\n")
+
+
+# ---------------------------------------------------------------- main
+def main():
+    STATE.mkdir(parents=True, exist_ok=True)
+    now = datetime.now(IST).replace(second=0, microsecond=0)
+    if os.getenv("AS_OF"):  # testing
+        now = datetime.fromisoformat(os.getenv("AS_OF")).replace(tzinfo=IST)
+    force = os.getenv("FORCE_RUN") == "1"
+    if not force and (now.weekday() >= 5 or hm(now) < "09:30" or hm(now) > "15:40"):
+        print(f"{now:%a %H:%M} - market time nahi hai, kuch nahi kiya", flush=True)
+        return
+
+    meta = load_json(META_F, {})
+    if meta.get("date") != now.strftime("%Y-%m-%d"):
+        meta = {"date": now.strftime("%Y-%m-%d"), "trades": 0, "stocks_today": [], "summary_sent": False}
+    positions = load_json(POS_F, [])
+
+    master = A.load_master()
+    contracts = A.option_contracts(master)
+    universe = A.fno_universe(master)
+    if os.getenv("MAX_SYMBOLS"):
+        universe = universe.head(int(os.getenv("MAX_SYMBOLS")))
+    print(f"{now:%Y-%m-%d %H:%M} | F&O stocks {len(universe)} | open {len(positions)}", flush=True)
+
+    closed_now = []
+    positions = manage_open(positions, now, closed_now)
+
+    if hm(now) < C.ENTRY_UPTO and len(positions) < C.MAX_OPEN and meta["trades"] < C.MAX_TRADES_PER_DAY:
+        for cand in scan(now, universe, contracts, positions, meta):
+            pos = try_enter(cand, now, contracts, positions, meta)
+            if pos:
+                positions.append(pos)
+
+    # din khatam -> summary
+    if hm(now) >= C.EXIT_AT and not positions and not meta.get("summary_sent"):
+        t = pd.read_csv(TRADES_F) if TRADES_F.exists() else pd.DataFrame(columns=TRADE_COLS)
+        t = t[t["date"] == meta["date"]]
+        if len(t):
+            send(f"📊 <b>Aaj ka paper result</b> ({meta['date']})\nTrades {len(t)} | "
+                 f"Win {(t['pnl'] > 0).sum()} | Loss {(t['pnl'] <= 0).sum()}\nP&L: <b>{inr(t['pnl'].sum())}</b>")
+        else:
+            send(f"📊 Aaj ({meta['date']}) koi option signal nahi aaya.")
+        meta["summary_sent"] = True
+
+    POS_F.write_text(json.dumps(positions, indent=1, default=str))
+    META_F.write_text(json.dumps(meta, indent=1))
+    write_status(positions, now)
+    print("done", flush=True)
+
+
+if __name__ == "__main__":
+    main()

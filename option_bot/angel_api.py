@@ -1,0 +1,137 @@
+"""
+Angel One SmartAPI helper: login, candles, LTP, scrip master (F&O list + option contracts).
+Secrets (GitHub): ANGEL_API_KEY, ANGEL_CLIENT_ID, ANGEL_PASSWORD (PIN), ANGEL_TOTP_SECRET
+"""
+import os
+import time
+import unicodedata
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
+import pandas as pd
+import requests
+
+from . import config as C
+
+IST = ZoneInfo("Asia/Kolkata")
+REQUEST_GAP = 0.40   # getCandleData ~3 req/sec limit
+
+
+def _clean(v):
+    if v is None:
+        return None
+    return "".join(ch for ch in v.strip() if unicodedata.category(ch) != "Cf").strip().strip("\"'")
+
+
+_client = None
+
+
+def login():
+    global _client
+    import pyotp
+    from SmartApi import SmartConnect
+
+    key, cid = _clean(os.getenv("ANGEL_API_KEY")), _clean(os.getenv("ANGEL_CLIENT_ID"))
+    pin, totp = _clean(os.getenv("ANGEL_PASSWORD")), _clean(os.getenv("ANGEL_TOTP_SECRET"))
+    if not all([key, cid, pin, totp]):
+        raise RuntimeError("Angel One secrets missing (ANGEL_API_KEY / CLIENT_ID / PASSWORD / TOTP_SECRET)")
+    for attempt in range(1, 4):
+        api = SmartConnect(api_key=key)
+        data = api.generateSession(cid, pin, pyotp.TOTP(totp).now())
+        if data.get("status"):
+            print("[angel] login OK", flush=True)
+            _client = api
+            return api
+        print(f"[angel] login fail {attempt}/3: {data.get('message')} {data.get('errorcode', '')}", flush=True)
+        time.sleep(max(2, 30 - int(time.time()) % 30))
+    raise RuntimeError("Angel One login 3 baar fail")
+
+
+def client():
+    return _client or login()
+
+
+def candles(token: str, exchange: str, interval: str, start: datetime, end: datetime) -> pd.DataFrame:
+    """OHLCV candles -> DataFrame(time IST, open, high, low, close, volume)."""
+    params = {"exchange": exchange, "symboltoken": str(token), "interval": interval,
+              "fromdate": start.strftime("%Y-%m-%d %H:%M"), "todate": end.strftime("%Y-%m-%d %H:%M")}
+    rows = []
+    for attempt in range(3):
+        try:
+            resp = client().getCandleData(params)
+            if resp and resp.get("status"):
+                rows = resp.get("data") or []
+                break
+            msg = str((resp or {}).get("message", "empty"))
+        except Exception as e:  # noqa: BLE001
+            msg = str(e)
+        if any(k in msg.lower() for k in ("rate", "too many", "access denied", "exceeding")):
+            time.sleep(5 * (attempt + 1))
+            continue
+        break
+    time.sleep(REQUEST_GAP)
+    if not rows:
+        return pd.DataFrame(columns=["time", "open", "high", "low", "close", "volume"])
+    df = pd.DataFrame(rows, columns=["time", "open", "high", "low", "close", "volume"])
+    t = pd.to_datetime(df["time"], utc=False)
+    if t.dt.tz is None:
+        t = t.dt.tz_localize(IST)
+    df["time"] = t.dt.tz_convert(IST)
+    for c in ["open", "high", "low", "close", "volume"]:
+        df[c] = df[c].astype(float)
+    return df
+
+
+def candles_long(token, exchange, interval, start, end, chunk_days=55):
+    """Lambe period ke liye tukdon me download."""
+    parts, cur = [], start
+    while cur < end:
+        stop = min(cur + timedelta(days=chunk_days), end)
+        parts.append(candles(token, exchange, interval, cur, stop))
+        cur = stop
+    parts = [p for p in parts if len(p)]
+    if not parts:
+        return pd.DataFrame(columns=["time", "open", "high", "low", "close", "volume"])
+    return pd.concat(parts).drop_duplicates("time").sort_values("time").reset_index(drop=True)
+
+
+def ltp(exchange: str, symbol: str, token: str) -> float | None:
+    try:
+        r = client().ltpData(exchange, symbol, str(token))
+        if r and r.get("status"):
+            return float(r["data"]["ltp"])
+    except Exception as e:  # noqa: BLE001
+        print(f"[angel] ltp fail {symbol}: {e}", flush=True)
+    return None
+
+
+# ---------------------------------------------------------------- scrip master
+def load_master() -> pd.DataFrame:
+    print("[angel] scrip master download...", flush=True)
+    data = requests.get(C.SCRIP_MASTER_URL, timeout=120).json()
+    m = pd.DataFrame(data)
+    for c in ["token", "symbol", "name", "expiry", "strike", "lotsize", "instrumenttype", "exch_seg"]:
+        if c not in m:
+            m[c] = ""
+    return m
+
+
+def fno_universe(master: pd.DataFrame) -> pd.DataFrame:
+    """F&O stocks (OPTSTK wale) + unka NSE cash token.  cols: name, token"""
+    opt = master[(master["exch_seg"] == "NFO") & (master["instrumenttype"] == "OPTSTK")]
+    names = set(opt["name"].unique())
+    eq = master[(master["exch_seg"] == "NSE") & master["symbol"].str.endswith("-EQ")].copy()
+    eq["name_eq"] = eq["symbol"].str[:-3]
+    eq = eq[eq["name_eq"].isin(names)]
+    return eq[["name_eq", "token"]].rename(columns={"name_eq": "name"}).drop_duplicates("name").reset_index(drop=True)
+
+
+def option_contracts(master: pd.DataFrame) -> pd.DataFrame:
+    """Saare stock option contracts: name, symbol, token, expiry(date), strike(Rs), lot, type(CE/PE)."""
+    o = master[(master["exch_seg"] == "NFO") & (master["instrumenttype"] == "OPTSTK")].copy()
+    o["expiry_d"] = pd.to_datetime(o["expiry"], format="%d%b%Y", errors="coerce").dt.date
+    o["strike_rs"] = pd.to_numeric(o["strike"], errors="coerce") / 100.0
+    o["lot"] = pd.to_numeric(o["lotsize"], errors="coerce").fillna(0).astype(int)
+    o["opt_type"] = o["symbol"].str[-2:]
+    o = o.dropna(subset=["expiry_d", "strike_rs"])
+    return o[["name", "symbol", "token", "expiry_d", "strike_rs", "lot", "opt_type"]].reset_index(drop=True)

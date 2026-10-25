@@ -1,0 +1,50 @@
+name: Option Backtest (approx)
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Kitne din ka data (30-365)"
+        default: "120"
+      max_symbols:
+        description: "Kitne F&O stocks (0 = sab)"
+        default: "0"
+
+permissions:
+  contents: write
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      ANGEL_API_KEY: ${{ secrets.ANGEL_API_KEY }}
+      ANGEL_CLIENT_ID: ${{ secrets.ANGEL_CLIENT_ID }}
+      ANGEL_PASSWORD: ${{ secrets.ANGEL_PASSWORD }}
+      ANGEL_TOTP_SECRET: ${{ secrets.ANGEL_TOTP_SECRET }}
+      BACKTEST_DAYS: ${{ inputs.days }}
+      MAX_SYMBOLS: ${{ inputs.max_symbols }}
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: pip install -r requirements.txt
+      - name: Offline self-test
+        run: python tests/test_offline.py > /dev/null
+      - name: Backtest
+        run: python backtest/backtest.py
+      - name: Save results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add backtest/results
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Backtest result $(TZ=Asia/Kolkata date '+%F %H:%M')"
+          for i in 1 2 3; do git pull --rebase origin main && git push && break; sleep 5; done
+      - name: Summary
+        if: always()
+        run: '[ -f backtest/results/LATEST_REPORT.txt ] && { echo "```"; cat backtest/results/LATEST_REPORT.txt; echo "```"; } >> "$GITHUB_STEP_SUMMARY" || true'

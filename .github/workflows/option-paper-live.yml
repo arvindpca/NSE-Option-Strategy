@@ -1,0 +1,57 @@
+name: Option Paper Trader (live, har 15 min)
+
+on:
+  schedule:
+    # IST 9:32 se 15:32 tak har 15 min (UTC me likha hai). Mon-Fri.
+    # Note: GitHub ka schedule kabhi kabhi 5-15 min late chalta hai.
+    - cron: "2,17,32,47 4-9 * * 1-5"
+    - cron: "2 10 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Market time ke bahar bhi chalao (test)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: option-paper-live
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    env:
+      ANGEL_API_KEY: ${{ secrets.ANGEL_API_KEY }}
+      ANGEL_CLIENT_ID: ${{ secrets.ANGEL_CLIENT_ID }}
+      ANGEL_PASSWORD: ${{ secrets.ANGEL_PASSWORD }}
+      ANGEL_TOTP_SECRET: ${{ secrets.ANGEL_TOTP_SECRET }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      FORCE_RUN: ${{ inputs.force && '1' || '0' }}
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: pip install -r requirements.txt
+      - name: Run paper trader
+        run: python option_bot/paper_trader.py
+      - name: Save state
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add state
+          if git diff --cached --quiet; then echo "No change"; exit 0; fi
+          git commit -m "Option paper update $(TZ=Asia/Kolkata date '+%F %H:%M')"
+          for i in 1 2 3; do git pull --rebase origin main && git push && break; sleep 5; done
+      - name: Summary
+        if: always()
+        run: '[ -f state/STATUS.md ] && cat state/STATUS.md >> "$GITHUB_STEP_SUMMARY" || true'
