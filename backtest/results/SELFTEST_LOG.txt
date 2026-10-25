@@ -1,60 +1,60 @@
+done
+2026-10-12 11:02 | F&O stocks 3 | open 2
+done
+2026-10-12 11:17 | F&O stocks 3 | open 2
+done
+2026-10-12 11:32 | F&O stocks 3 | open 2
+done
+2026-10-12 11:47 | F&O stocks 3 | open 2
+done
+2026-10-12 12:02 | F&O stocks 3 | open 2
+done
+2026-10-12 12:17 | F&O stocks 3 | open 2
+done
+2026-10-12 12:32 | F&O stocks 3 | open 2
+done
+2026-10-12 12:47 | F&O stocks 3 | open 2
+  [TG] ✅ <b>PAPER EXIT</b> AAA27OCT261150CE | AAA CE | Entry 19.47 → Exit 29.21 | Reason: TARGET | P&L: <b>+Rs 2,253</b> (250 qty)
+EXIT AAA27OCT261150CE TARGET 19.47->29.21 pnl 2253.3
+  [TG] ✅ <b>PAPER EXIT</b> CCC27OCT262000CE | CCC CE | Entry 44.57 → Exit 66.86 | Reason: TARGET | P&L: <b>+Rs 3,116</b> (150 qty)
+EXIT CCC27OCT262000CE TARGET 44.57->66.86 pnl 3116.36
+done
+2026-10-12 13:02 | F&O stocks 3 | open 0
+done
+2026-10-12 13:17 | F&O stocks 3 | open 0
+done
+2026-10-12 13:32 | F&O stocks 3 | open 0
+done
+2026-10-12 13:47 | F&O stocks 3 | open 0
+done
+2026-10-12 14:02 | F&O stocks 3 | open 0
+done
+2026-10-12 14:17 | F&O stocks 3 | open 0
+done
+2026-10-12 14:32 | F&O stocks 3 | open 0
+done
+2026-10-12 14:47 | F&O stocks 3 | open 0
+done
+2026-10-12 15:02 | F&O stocks 3 | open 0
+done
+2026-10-12 15:17 | F&O stocks 3 | open 0
+  [TG] 📊 <b>Aaj ka paper result</b> (2026-10-12) | Trades 2 | Win 2 | Loss 0 | P&L: <b>+Rs 5,370</b>
+done
+2026-10-12 15:32 | F&O stocks 3 | open 0
+done
+# Option Paper Trader - status (12 Oct 2026 15:32 IST)
 
-backtest OK
-2026-10-12 09:32 | F&O stocks 0 | open 0
-done
-2026-10-12 09:47 | F&O stocks 0 | open 0
-done
-2026-10-12 10:02 | F&O stocks 0 | open 0
-done
-2026-10-12 10:17 | F&O stocks 0 | open 0
-done
-2026-10-12 10:32 | F&O stocks 0 | open 0
-done
-2026-10-12 10:47 | F&O stocks 0 | open 0
-done
-2026-10-12 11:02 | F&O stocks 0 | open 0
-done
-2026-10-12 11:17 | F&O stocks 0 | open 0
-done
-2026-10-12 11:32 | F&O stocks 0 | open 0
-done
-2026-10-12 11:47 | F&O stocks 0 | open 0
-done
-2026-10-12 12:02 | F&O stocks 0 | open 0
-done
-2026-10-12 12:17 | F&O stocks 0 | open 0
-done
-2026-10-12 12:32 | F&O stocks 0 | open 0
-done
-2026-10-12 12:47 | F&O stocks 0 | open 0
-done
-2026-10-12 13:02 | F&O stocks 0 | open 0
-done
-2026-10-12 13:17 | F&O stocks 0 | open 0
-done
-2026-10-12 13:32 | F&O stocks 0 | open 0
-done
-2026-10-12 13:47 | F&O stocks 0 | open 0
-done
-2026-10-12 14:02 | F&O stocks 0 | open 0
-done
-2026-10-12 14:17 | F&O stocks 0 | open 0
-done
-2026-10-12 14:32 | F&O stocks 0 | open 0
-done
-2026-10-12 14:47 | F&O stocks 0 | open 0
-done
-2026-10-12 15:02 | F&O stocks 0 | open 0
-done
-2026-10-12 15:17 | F&O stocks 0 | open 0
-  [TG] 📊 Aaj (2026-10-12) koi option signal nahi aaya.
-done
-2026-10-12 15:32 | F&O stocks 0 | open 0
-done
-Traceback (most recent call last):
-  File "/home/runner/work/NSE-Option-Strategy/NSE-Option-Strategy/tests/test_offline.py", line 172, in <module>
-    test_live_paper(tmp, data)
-  File "/home/runner/work/NSE-Option-Strategy/NSE-Option-Strategy/tests/test_offline.py", line 161, in test_live_paper
-    assert any("PAPER" in s and "BUY" in s for s in sent), "entry alert nahi aaya"
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError: entry alert nahi aaya
+## Khuli positions (0)
+Koi nahi
+
+## Ab tak ka result (sab paper trades)
+Trades 2 | Win 100% | Kul P&L +Rs 5,370 | Avg +Rs 2,685
+
+| Date | Option | Reason | Entry | Exit | P&L |
+|---|---|---|---|---|---|
+| 2026-10-12 | CCC27OCT262000CE | TARGET | 44.57 | 66.86 | 3116 |
+| 2026-10-12 | AAA27OCT261150CE | TARGET | 19.47 | 29.21 | 2253 |
+
+live paper OK
+
+SAB TEST PASS

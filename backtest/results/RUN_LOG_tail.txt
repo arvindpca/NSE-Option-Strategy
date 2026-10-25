@@ -1,17 +1,15 @@
-[angel] scrip master download...
-DOWNLOAD 213 F&O stocks + Nifty | 120 din
-[I 261025 20:14:52 smartConnect:124] in pool
-[angel] login OK
-  0/213
-  25/213
-  50/213
-  75/213
-  100/213
   125/213
   150/213
   175/213
   200/213
+--- A: abhi wale rules (v1)
 Signals (trade ban sakte the): 869
+--- B: breakout-fail exit hatao
+Signals (trade ban sakte the): 869
+--- C: B + entry 10:15 ke baad
+Signals (trade ban sakte the): 547
+--- D: C + SL 35%
+Signals (trade ban sakte the): 547
 F&O STOCK OPTION BUYING - BACKTEST (APPROX)
 ============================================================
 Stocks 213 | Data 2026-06-29 se 2026-10-23
@@ -20,6 +18,14 @@ Cost Rs 60/trade + slippage 1% | IV = 20d vol x 1.1
 
 DHYAN DE: premium formula se andaaza hai (asli option data nahi). Asli me IV badalta hai,
 spread hota hai. Isliye pehle 3-4 hafte PAPER trading ka result dekho, phir hi paisa lagao.
+
+VERSIONS KA MUKABLA (same data, sirf rule badle):
+  A: abhi wale rules (v1)          Trades 271 | Win 31.0% | Kul P&L Rs -49,356 | Avg Rs -182 | PF 0.86 | Max DD Rs -89,180
+  B: breakout-fail exit hatao      Trades 244 | Win 41.8% | Kul P&L Rs -16,230 | Avg Rs -67 | PF 0.95 | Max DD Rs -97,769
+  C: B + entry 10:15 ke baad       Trades 218 | Win 38.5% | Kul P&L Rs -7,880 | Avg Rs -36 | PF 0.97 | Max DD Rs -56,898
+  D: C + SL 35%                    Trades 214 | Win 39.7% | Kul P&L Rs -15,726 | Avg Rs -73 | PF 0.95 | Max DD Rs -55,844
+
+Neeche ki detail: version A (abhi wale rules)
 
 KUL:      Trades 271 | Win 31.0% | Kul P&L Rs -49,356 | Avg Rs -182 | PF 0.86 | Max DD Rs -89,180
 1st half: Trades 135 | Win 27.4% | Kul P&L Rs -47,376 | Avg Rs -351 | PF 0.74 | Max DD Rs -71,065
