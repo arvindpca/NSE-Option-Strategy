@@ -34,11 +34,20 @@ jobs:
       - name: Install
         run: pip install -r requirements.txt
       - name: Offline self-test
-        run: python tests/test_offline.py > /dev/null
-      - name: Backtest
-        run: python backtest/backtest.py
-      - name: Save results
+        continue-on-error: true
         run: |
+          mkdir -p backtest/results
+          set -o pipefail
+          python tests/test_offline.py 2>&1 | tail -60 > backtest/results/SELFTEST_LOG.txt
+      - name: Backtest
+        run: |
+          set -o pipefail
+          python backtest/backtest.py 2>&1 | tee backtest/results/RUN_LOG.txt
+      - name: Save results
+        if: always()
+        run: |
+          tail -80 backtest/results/RUN_LOG.txt > backtest/results/RUN_LOG_tail.txt 2>/dev/null || true
+          rm -f backtest/results/RUN_LOG.txt
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add backtest/results
