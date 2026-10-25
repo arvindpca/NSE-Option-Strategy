@@ -1,0 +1,59 @@
+F&O STOCK OPTION BUYING - BACKTEST (APPROX)
+============================================================
+Stocks 213 | Data 2026-06-29 se 2026-10-23
+Rules: ATM option, SL -25%, Target +50%, breakeven +25%, exit 15:15, max 3 open, 4/din, 1 lot <= Rs 30,000
+Cost Rs 60/trade + slippage 1% | IV = 20d vol x 1.1
+
+DHYAN DE: premium formula se andaaza hai (asli option data nahi). Asli me IV badalta hai,
+spread hota hai. Isliye pehle 3-4 hafte PAPER trading ka result dekho, phir hi paisa lagao.
+
+KUL:      Trades 271 | Win 31.0% | Kul P&L Rs -49,356 | Avg Rs -182 | PF 0.86 | Max DD Rs -89,180
+1st half: Trades 135 | Win 27.4% | Kul P&L Rs -47,376 | Avg Rs -351 | PF 0.74 | Max DD Rs -71,065
+2nd half: Trades 136 | Win 34.6% | Kul P&L Rs -1,980 | Avg Rs -15 | PF 0.99 | Max DD Rs -36,921
+CALL(CE): Trades 129 | Win 29.5% | Kul P&L Rs -47,891 | Avg Rs -371 | PF 0.75 | Max DD Rs -68,986
+PUT(PE):  Trades 142 | Win 32.4% | Kul P&L Rs -1,465 | Avg Rs -10 | PF 0.99 | Max DD Rs -58,717
+
+Mahine ke hisaab se:
+         trades      pnl     avg  win_pct
+month                                    
+2026-06       3  -7340.0 -2447.0      0.0
+2026-07      78   5344.0    69.0     31.0
+2026-08      62 -53657.0  -865.0     24.0
+2026-09      72  11901.0   165.0     40.0
+2026-10      56  -5603.0  -100.0     29.0
+
+Entry time ke hisaab se:
+       trades      pnl    avg  win_pct
+hour                                  
+10:00     200 -39006.0 -195.0     28.0
+11:00      37   5896.0  159.0     46.0
+12:00      26 -12334.0 -474.0     31.0
+13:00       8  -3912.0 -489.0     25.0
+
+Exit reason:
+           trades       pnl     avg  win_pct
+reason                                      
+BREAKEVEN      18   -5501.0  -306.0      0.0
+OR_FAIL       136 -265852.0 -1955.0      0.0
+SL             11  -47274.0 -4298.0      0.0
+TARGET         21  128000.0  6095.0    100.0
+TIME           85  141270.0  1662.0     74.0
+
+Sabse zyada trade wale stocks (top 15):
+            trades      pnl
+stock                      
+BDL              6  -6644.0
+MAZDOCK          6  -2941.0
+UNOMINDA         6 -12402.0
+HDFCLIFE         5   4433.0
+PGEL             5  17693.0
+MANKIND          4   3956.0
+HCLTECH          4    623.0
+TATAPOWER        4  -2931.0
+PIIND            4  -3435.0
+GODREJPROP       4   8060.0
+JINDALSTEL       4  -3846.0
+CROMPTON         4   6889.0
+DMART            4  -2454.0
+BPCL             4  10422.0
+TATAELXSI        3   6405.0
