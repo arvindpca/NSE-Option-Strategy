@@ -1,0 +1,53 @@
+name: Market Clock (paper trading auto-run)
+
+# Market time me sahi minute pe paper trading workflows chalata hai.
+# GitHub ka apna 5/15 min cron bharosemand nahi hai, isliye ye ek lamba job hai.
+# Roz subah (Mon-Fri) ~9:05 IST pe start hota hai, 18:45 IST tak chalta hai.
+on:
+  schedule:
+    - cron: "35 3 * * 1-5"   # 9:05 IST (best effort)
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: market-clock
+  cancel-in-progress: false
+
+jobs:
+  morning:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - name: Clock 9:05 - 12:30 IST
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DISPATCH_PAT: ${{ secrets.DISPATCH_PAT }}
+        run: python clock/market_clock.py 12:30
+
+  afternoon:
+    needs: morning
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - name: Clock 12:30 - 15:50 IST
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DISPATCH_PAT: ${{ secrets.DISPATCH_PAT }}
+        run: python clock/market_clock.py 15:50
+
+  evening:
+    needs: afternoon
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - name: Clock 15:50 - 18:45 IST
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DISPATCH_PAT: ${{ secrets.DISPATCH_PAT }}
+        run: python clock/market_clock.py 18:45

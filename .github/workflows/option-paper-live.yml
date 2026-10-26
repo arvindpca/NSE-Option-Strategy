@@ -1,12 +1,7 @@
-# schedule re-register: 2026-10-26
 name: Option Paper Trader (live, har 15 min)
 
 on:
-  schedule:
-    # IST 9:32 se 15:32 tak har 15 min (UTC me likha hai). Mon-Fri.
-    # Note: GitHub ka schedule kabhi kabhi 5-15 min late chalta hai.
-    - cron: "2,17,32,47 4-9 * * 1-5"
-    - cron: "2 10 * * 1-5"
+  # Schedule ab 'Market Clock' workflow se chalta hai (GitHub cron late/miss karta tha).
   workflow_dispatch:
     inputs:
       force:
