@@ -14,7 +14,7 @@ import requests
 from . import config as C
 
 IST = ZoneInfo("Asia/Kolkata")
-REQUEST_GAP = 0.40   # getCandleData ~3 req/sec limit
+REQUEST_GAP = 0.75   # Angel ~3 req/sec, par Scanner + Reliance bhi same account use karte hain
 STATS = {"calls": 0, "empty": 0, "rate_limit": 0, "errors": 0, "secs": 0.0, "last_msg": ""}
 
 
@@ -72,7 +72,7 @@ def candles(token: str, exchange: str, interval: str, start: datetime, end: date
         STATS["last_msg"] = msg[:150]
         if any(k in msg.lower() for k in ("rate", "too many", "access denied", "exceeding")):
             STATS["rate_limit"] += 1
-            time.sleep(1.5 * (attempt + 1))
+            time.sleep(3 * (attempt + 1))
             continue
         break
     time.sleep(REQUEST_GAP)
