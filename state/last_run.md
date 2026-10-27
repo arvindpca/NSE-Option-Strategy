@@ -1,11 +1,11 @@
 # Last run
 
-- scanned: 54
+- scanned: 59
 - scan_cut: True
-- scan_secs: 542
-- signals: ['BANDHANBNK CE']
-- time: 2026-10-27 11:17
+- scan_secs: 541
+- signals: ['HDFCAMC CE']
+- time: 2026-10-27 11:32
 - fno: 213
 - open: 0
 - trades_today: 0
-- angel: {'calls': 122, 'empty': 16, 'rate_limit': 82, 'errors': 82, 'secs': 565.3155181407928, 'last_msg': "Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'"}
+- angel: {'calls': 126, 'empty': 14, 'rate_limit': 79, 'errors': 79, 'secs': 548.4270970821381, 'last_msg': "Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'"}
