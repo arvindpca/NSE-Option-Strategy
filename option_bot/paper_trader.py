@@ -22,6 +22,7 @@ import csv
 import json
 import os
 import sys
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -46,6 +47,9 @@ META_F, STATUS_F = STATE / "meta.json", STATE / "STATUS.md"
 TRADE_COLS = ["date", "stock", "side", "option", "expiry", "strike", "lot", "qty", "entry_time", "entry",
               "exit_time", "exit", "reason", "pnl", "spot_entry"]
 SIG_COLS = ["time", "stock", "side", "spot", "vol_x", "action", "note"]
+
+
+RUN = {}   # is run ki chhoti report (state/last_run.md)
 
 
 # ---------------------------------------------------------------- small helpers
@@ -131,13 +135,23 @@ def manage_open(positions, now, today_trades_pnl):
 # ---------------------------------------------------------------- entries
 def scan(now, universe, contracts, positions, meta):
     today = now.date()
-    start = now - timedelta(days=8)          # indicators ke warm-up ke liye pichhle din bhi
+    start = now - timedelta(days=5)          # indicators ke warm-up ke liye pichhle din bhi
     nifty = completed(A.candles(C.NIFTY_TOKEN, "NSE", "FIFTEEN_MINUTE", start, now), now, 15)
     if nifty.empty:
         print("Nifty data nahi mila - scan skip", flush=True)
         return []
     found = []
-    for _, u in universe.iterrows():
+    t0 = time.time()
+    budget = float(os.getenv("SCAN_BUDGET_SEC", "540"))   # 9 min: job 14 min me kabhi na atke
+    RUN["scanned"] = 0
+    for n, (_, u) in enumerate(universe.iterrows(), 1):
+        if time.time() - t0 > budget:
+            print(f"scan time khatam: {n-1}/{len(universe)} stocks dekhe", flush=True)
+            RUN["scan_cut"] = True
+            break
+        if n % 25 == 0:
+            print(f"[scan] {n}/{len(universe)} | {time.time()-t0:.0f}s | {A.STATS}", flush=True)
+        RUN["scanned"] = n
         df = completed(A.candles(u["token"], "NSE", "FIFTEEN_MINUTE", start, now), now, 15)
         if len(df) < 30 or df["time"].iloc[-1].date() != today:
             continue
@@ -155,6 +169,8 @@ def scan(now, universe, contracts, positions, meta):
                       "candle": r["time"], "or_high": r["or_high"], "or_low": r["or_low"],
                       "vol_x": round(r["volume"] / r["vol_avg"], 2)})
     found.sort(key=lambda x: -x["vol_x"])   # sabse zyada volume uchhal pehle
+    RUN["scan_secs"] = round(time.time() - t0)
+    RUN["signals"] = [f"{f['stock']} {f['side']}" for f in found]
     return found
 
 
@@ -278,6 +294,10 @@ def main():
     POS_F.write_text(json.dumps(positions, indent=1, default=str))
     META_F.write_text(json.dumps(meta, indent=1))
     write_status(positions, now)
+    RUN.update(time=f"{now:%Y-%m-%d %H:%M}", fno=len(universe), open=len(positions),
+               trades_today=meta["trades"], angel=dict(A.STATS))
+    (STATE / "last_run.md").write_text("# Last run\n\n" + "\n".join(f"- {k}: {v}" for k, v in RUN.items()) + "\n")
+    print("RUN", RUN, flush=True)
     print("done", flush=True)
 
 

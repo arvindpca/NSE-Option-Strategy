@@ -15,6 +15,7 @@ from . import config as C
 
 IST = ZoneInfo("Asia/Kolkata")
 REQUEST_GAP = 0.40   # getCandleData ~3 req/sec limit
+STATS = {"calls": 0, "empty": 0, "rate_limit": 0, "errors": 0, "secs": 0.0, "last_msg": ""}
 
 
 def _clean(v):
@@ -56,7 +57,9 @@ def candles(token: str, exchange: str, interval: str, start: datetime, end: date
     params = {"exchange": exchange, "symboltoken": str(token), "interval": interval,
               "fromdate": start.strftime("%Y-%m-%d %H:%M"), "todate": end.strftime("%Y-%m-%d %H:%M")}
     rows = []
+    t0 = time.time()
     for attempt in range(3):
+        STATS["calls"] += 1
         try:
             resp = client().getCandleData(params)
             if resp and resp.get("status"):
@@ -65,12 +68,17 @@ def candles(token: str, exchange: str, interval: str, start: datetime, end: date
             msg = str((resp or {}).get("message", "empty"))
         except Exception as e:  # noqa: BLE001
             msg = str(e)
+            STATS["errors"] += 1
+        STATS["last_msg"] = msg[:150]
         if any(k in msg.lower() for k in ("rate", "too many", "access denied", "exceeding")):
-            time.sleep(5 * (attempt + 1))
+            STATS["rate_limit"] += 1
+            time.sleep(1.5 * (attempt + 1))
             continue
         break
     time.sleep(REQUEST_GAP)
+    STATS["secs"] += time.time() - t0
     if not rows:
+        STATS["empty"] += 1
         return pd.DataFrame(columns=["time", "open", "high", "low", "close", "volume"])
     df = pd.DataFrame(rows, columns=["time", "open", "high", "low", "close", "volume"])
     t = pd.to_datetime(df["time"], utc=False)
