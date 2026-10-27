@@ -144,6 +144,11 @@ def scan(now, universe, contracts, positions, meta):
     t0 = time.time()
     budget = float(os.getenv("SCAN_BUDGET_SEC", "540"))   # 9 min: job 14 min me kabhi na atke
     RUN["scanned"] = 0
+    # Angel rate-limit ki wajah se ek run me sab stocks nahi ho paate:
+    # har run pichhle run ke aage se shuru kare, taaki din me sab cover ho.
+    off = int(meta.get("scan_offset", 0)) % max(1, len(universe))
+    universe = pd.concat([universe.iloc[off:], universe.iloc[:off]])
+    RUN["start_at"] = off
     for n, (_, u) in enumerate(universe.iterrows(), 1):
         if time.time() - t0 > budget:
             print(f"scan time khatam: {n-1}/{len(universe)} stocks dekhe", flush=True)
@@ -169,6 +174,7 @@ def scan(now, universe, contracts, positions, meta):
                       "candle": r["time"], "or_high": r["or_high"], "or_low": r["or_low"],
                       "vol_x": round(r["volume"] / r["vol_avg"], 2)})
     found.sort(key=lambda x: -x["vol_x"])   # sabse zyada volume uchhal pehle
+    meta["scan_offset"] = (off + RUN.get("scanned", 0)) % max(1, len(universe))
     RUN["scan_secs"] = round(time.time() - t0)
     RUN["signals"] = [f"{f['stock']} {f['side']}" for f in found]
     return found
