@@ -1,12 +1,12 @@
 # Last run
 
-- scanned: 64
-- start_at: 126
+- scanned: 61
+- start_at: 190
 - scan_cut: True
-- scan_secs: 562
-- signals: ['IOC CE']
-- time: 2026-10-27 12:32
+- scan_secs: 550
+- signals: []
+- time: 2026-10-27 12:47
 - fno: 213
 - open: 0
 - trades_today: 0
-- angel: {'calls': 124, 'empty': 17, 'rate_limit': 75, 'errors': 75, 'secs': 566.7590267658234, 'last_msg': "Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'"}
+- angel: {'calls': 118, 'empty': 15, 'rate_limit': 71, 'errors': 71, 'secs': 552.6919574737549, 'last_msg': "Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'"}
