@@ -3,7 +3,9 @@
  "trades": 0,
  "stocks_today": [
   "CROMPTON",
-  "INDIGO"
+  "INDIGO",
+  "BIOCON",
+  "TIINDIA"
  ],
  "summary_sent": false
 }
