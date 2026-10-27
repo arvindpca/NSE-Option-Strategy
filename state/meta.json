@@ -9,8 +9,9 @@
   "BANDHANBNK",
   "HDFCAMC",
   "NTPC",
-  "JUBLFOOD"
+  "JUBLFOOD",
+  "IOC"
  ],
  "summary_sent": false,
- "scan_offset": 126
+ "scan_offset": 190
 }
