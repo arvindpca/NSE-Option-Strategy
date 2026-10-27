@@ -7,7 +7,9 @@
   "BIOCON",
   "TIINDIA",
   "BANDHANBNK",
-  "HDFCAMC"
+  "HDFCAMC",
+  "NTPC"
  ],
- "summary_sent": false
+ "summary_sent": false,
+ "scan_offset": 72
 }
