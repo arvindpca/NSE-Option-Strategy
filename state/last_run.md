@@ -1,12 +1,12 @@
 # Last run
 
-- scanned: 72
-- start_at: 0
+- scanned: 54
+- start_at: 72
 - scan_cut: True
-- scan_secs: 544
-- signals: ['NTPC CE']
-- time: 2026-10-27 12:02
+- scan_secs: 540
+- signals: ['JUBLFOOD CE']
+- time: 2026-10-27 12:17
 - fno: 213
 - open: 0
 - trades_today: 0
-- angel: {'calls': 132, 'empty': 15, 'rate_limit': 73, 'errors': 73, 'secs': 558.6387755870819, 'last_msg': "Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'"}
+- angel: {'calls': 122, 'empty': 17, 'rate_limit': 82, 'errors': 82, 'secs': 554.3628442287445, 'last_msg': "Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'"}
