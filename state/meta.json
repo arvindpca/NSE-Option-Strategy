@@ -1,7 +1,10 @@
 {
  "date": "2026-10-28",
  "trades": 0,
- "stocks_today": [],
+ "stocks_today": [
+  "RELIANCE",
+  "COALINDIA"
+ ],
  "summary_sent": false,
- "scan_offset": 211
+ "scan_offset": 62
 }
