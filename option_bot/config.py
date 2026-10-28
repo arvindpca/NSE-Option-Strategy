@@ -44,7 +44,7 @@ SIGNAL_LOOKBACK_CANDLES = 2 # GitHub run late ho to pichhli 2 candle tak ka fres
 STRIKE_MODE = "ATM"         # "ATM" ya "ITM1" (1 strike in-the-money)
 MIN_DAYS_TO_EXPIRY = 5      # expiry 5 din se kam -> agle mahine ka contract
 MIN_PREMIUM = 5.0           # isse sasta option skip (illiquid)
-MIN_OPTION_VOL_LOTS = 20    # aaj ka option volume kam se kam 20 lot
+MIN_OPTION_VOL_LOTS = 20    # aaj ka option volume kam se kam 20 lot (Angel volume lots me deta hai)
 
 # ---------------- money / risk ----------------
 MAX_COST_PER_TRADE = 30_000 # 1 lot ki keemat isse zyada -> skip

@@ -204,8 +204,10 @@ def try_enter(cand, now, contracts, positions, meta):
     price = A.ltp("NFO", con["symbol"], con["token"]) or (float(oc["close"].iloc[-1]) if len(oc) else None)
     if not price or price < C.MIN_PREMIUM:
         return skip(f"premium {price} bahut kam / nahi mila")
-    if opt_vol < C.MIN_OPTION_VOL_LOTS * con["lot"]:
-        return skip(f"option illiquid (aaj volume {opt_vol:.0f})")
+    # Angel NFO candle volume LOTS (contracts) me deta hai, shares me nahi (28 Oct check: RELIANCE
+    # candle_sum x lot ~= marketData tradeVolume). Isliye seedha lots se compare.
+    if opt_vol < C.MIN_OPTION_VOL_LOTS:
+        return skip(f"option illiquid (aaj sirf {opt_vol:.0f} lots, chahiye {C.MIN_OPTION_VOL_LOTS})")
     qty = int(con["lot"]) * C.LOTS_PER_TRADE
     cost = price * qty
     if cost > C.MAX_COST_PER_TRADE:
