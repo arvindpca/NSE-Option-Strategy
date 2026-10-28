@@ -3,8 +3,9 @@
  "trades": 0,
  "stocks_today": [
   "RELIANCE",
-  "COALINDIA"
+  "COALINDIA",
+  "OIL"
  ],
  "summary_sent": false,
- "scan_offset": 206
+ "scan_offset": 58
 }
