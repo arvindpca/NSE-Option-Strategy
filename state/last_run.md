@@ -1,12 +1,7 @@
 # Last run
 
-- scanned: 60
-- start_at: 166
-- scan_cut: True
-- scan_secs: 541
-- signals: []
-- time: 2026-10-28 13:17
+- time: 2026-10-28 13:32
 - fno: 218
 - open: 0
 - trades_today: 0
-- angel: {'calls': 128, 'empty': 15, 'rate_limit': 82, 'errors': 82, 'secs': 549.1202001571655, 'last_msg': "Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'"}
+- angel: {'calls': 0, 'empty': 0, 'rate_limit': 0, 'errors': 0, 'secs': 0.0, 'last_msg': ''}
