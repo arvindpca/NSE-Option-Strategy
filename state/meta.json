@@ -1,6 +1,6 @@
 {
  "date": "2026-10-29",
- "trades": 3,
+ "trades": 4,
  "stocks_today": [
   "IEX",
   "MCX",
@@ -8,8 +8,9 @@
   "INDIANB",
   "PNB",
   "MPHASIS",
-  "MARICO"
+  "MARICO",
+  "360ONE"
  ],
  "summary_sent": false,
- "scan_offset": 213
+ "scan_offset": 72
 }
