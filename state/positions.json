@@ -1,1 +1,23 @@
-[]
+[
+ {
+  "date": "2026-10-29",
+  "stock": "SYRMA",
+  "stock_token": "10793",
+  "side": "CE",
+  "option": "SYRMA23NOV261640CE",
+  "opt_token": "146901",
+  "expiry": "2026-11-23",
+  "strike": 1640.0,
+  "lot": 325,
+  "qty": 325,
+  "entry_time": "2026-10-29 10:17",
+  "entry": 91.05,
+  "sl": 68.29,
+  "target": 136.57,
+  "spot_entry": 1645.1,
+  "or_high": 1639.0,
+  "or_low": 1563.0,
+  "entry_candle": "2026-10-29T10:00:00+05:30",
+  "last_check": "2026-10-29T10:17:00+05:30"
+ }
+]

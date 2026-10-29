@@ -12,3 +12,6 @@ time,stock,side,spot,vol_x,action,note
 2026-10-28 10:32,COALINDIA,PE,392.4,1.53,SKIP,option illiquid (aaj volume 638)
 2026-10-28 11:17,OIL,PE,447.15,1.89,SKIP,option illiquid (aaj volume 12)
 2026-10-28 11:47,PRESTIGE,PE,1396.6,1.71,SKIP,option illiquid (aaj volume 45)
+2026-10-29 10:17,IEX,CE,103.66,4.94,SKIP,premium 4.01 bahut kam / nahi mila
+2026-10-29 10:17,MCX,CE,3211.3,2.54,SKIP,"1 lot ki cost Rs 33,761 > Rs 30,000"
+2026-10-29 10:17,SYRMA,CE,1645.1,2.2,ENTRY,SYRMA23NOV261640CE
