@@ -1,12 +1,7 @@
 {
- "date": "2026-10-28",
+ "date": "2026-10-29",
  "trades": 0,
- "stocks_today": [
-  "RELIANCE",
-  "COALINDIA",
-  "OIL",
-  "PRESTIGE"
- ],
- "summary_sent": true,
- "scan_offset": 8
+ "stocks_today": [],
+ "summary_sent": false,
+ "scan_offset": 76
 }
