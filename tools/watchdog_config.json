@@ -1,0 +1,10 @@
+{
+ "interval": [
+  {
+   "wf": "option-paper-live.yml",
+   "gap_min": 40,
+   "window": "market",
+   "label": "Option Paper Trader"
+  }
+ ]
+}
