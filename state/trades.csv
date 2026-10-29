@@ -1,0 +1,2 @@
+date,stock,side,option,expiry,strike,lot,qty,entry_time,entry,exit_time,exit,reason,pnl,spot_entry
+2026-10-29,SYRMA,CE,SYRMA23NOV261640CE,2026-11-23,1640.0,325,325,2026-10-29 10:17,91.05,2026-10-29 10:32,87.65,OR_FAIL,-1745.77,1645.1

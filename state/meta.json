@@ -1,11 +1,15 @@
 {
  "date": "2026-10-29",
- "trades": 1,
+ "trades": 3,
  "stocks_today": [
   "IEX",
   "MCX",
-  "SYRMA"
+  "SYRMA",
+  "INDIANB",
+  "PNB",
+  "MPHASIS",
+  "MARICO"
  ],
  "summary_sent": false,
- "scan_offset": 70
+ "scan_offset": 141
 }
