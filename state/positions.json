@@ -18,6 +18,27 @@
   "or_high": 536.15,
   "or_low": 526.35,
   "entry_candle": "2026-10-30T09:45:00+05:30",
-  "last_check": "2026-10-30T11:00:00+05:30"
+  "last_check": "2026-10-30T11:30:00+05:30"
+ },
+ {
+  "date": "2026-10-30",
+  "stock": "ALKEM",
+  "stock_token": "11703",
+  "side": "CE",
+  "option": "ALKEM23NOV265100CE",
+  "opt_token": "69046",
+  "expiry": "2026-11-23",
+  "strike": 5100.0,
+  "lot": 125,
+  "qty": 125,
+  "entry_time": "2026-10-30 11:32",
+  "entry": 171.0,
+  "sl": 128.25,
+  "target": 256.5,
+  "spot_entry": 5118.5,
+  "or_high": 5093.5,
+  "or_low": 5036.0,
+  "entry_candle": "2026-10-30T11:00:00+05:30",
+  "last_check": "2026-10-30T11:32:00+05:30"
  }
 ]
