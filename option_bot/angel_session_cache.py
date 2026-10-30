@@ -61,6 +61,13 @@ def _decrypt(key: bytes, blob: bytes) -> bytes | None:
     return bytes(a ^ b for a, b in zip(ct, _stream(key, nonce, len(ct))))
 
 
+def _note(msg: str) -> None:
+    """Log + GitHub notice (Actions page par dikhe aur API se padha ja sake)."""
+    print(f"[angel-cache] {msg}", flush=True)
+    if os.getenv("GITHUB_ACTIONS"):
+        print(f"::notice title=Angel login::{msg}", flush=True)
+
+
 def _today() -> str:
     return datetime.now(IST).strftime("%Y-%m-%d")
 
@@ -80,7 +87,7 @@ def save(api) -> None:
         }).encode()
         CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
         CACHE_PATH.write_bytes(_encrypt(key, payload))
-        print("[angel-cache] session saved (aaj ke baaki runs dobara login nahi karenge)", flush=True)
+        _note("naya login hua, session save kiya")
     except Exception as exc:  # cache kabhi bot ko nahi todega
         print(f"[angel-cache] save skipped: {type(exc).__name__}", flush=True)
 
@@ -105,9 +112,9 @@ def load():
                            userId=s.get("user_id"))
         check = api.getProfile(s["refresh_token"])
         if not (isinstance(check, dict) and check.get("status")):
-            print("[angel-cache] session expire ho gaya -> naya login", flush=True)
+            _note("session expire ho gaya -> naya login")
             return None
-        print("[angel-cache] aaj ka session reuse kiya (login nahi kiya)", flush=True)
+        _note("aaj ka session reuse kiya (login nahi kiya)")
         return api
     except Exception as exc:
         print(f"[angel-cache] cache use nahi hua ({type(exc).__name__}) -> naya login", flush=True)
