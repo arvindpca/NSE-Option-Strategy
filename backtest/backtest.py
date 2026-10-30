@@ -118,13 +118,14 @@ def simulate(day: pd.DataFrame, i: int, side: str, iv: float, lot: int):
 
 
 # ---------------------------------------------------------------- run
-R = {"REAL_CHARGES": True}          # sab versions me Angel ke asli charges
+R = {"REAL_CHARGES": True}
+OLD = {"USE_OR_FAIL_EXIT": True, "VOL_MULT": 1.5, "MAX_COST_PER_TRADE": 30_000}   # v1 rules
 NO_ORF = {"USE_OR_FAIL_EXIT": False}
 FIX = {**NO_ORF, "VOL_MULT": 2.0, "MAX_COST_PER_TRADE": 20_000}   # loss analysis wale sudhaar
 VARIANTS = [
-    ("A: purane rules (live abhi)", {**R}),
-    ("B: breakout-fail exit hatao", {**R, **NO_ORF}),
-    ("E: B + vol 2x + lot<=20k", {**R, **FIX}),
+    ("A: purane rules (v1)", {**R, **OLD}),
+    ("B: breakout-fail exit hatao", {**R, **OLD, **NO_ORF}),
+    ("E: B + vol 2x + lot<=20k (LIVE v2)", {**R, **FIX}),
     ("F: E + entry 10:15 ke baad", {**R, **FIX, "ENTRY_FROM": "10:15"}),
     ("E @ slippage 0.5%", {**R, **FIX, "SLIPPAGE_PCT": 0.005}),
     ("F @ slippage 0.5%", {**R, **FIX, "ENTRY_FROM": "10:15", "SLIPPAGE_PCT": 0.005}),

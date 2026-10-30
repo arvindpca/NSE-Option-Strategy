@@ -136,7 +136,12 @@ def manage_open(positions, now, today_trades_pnl):
 def scan(now, universe, contracts, positions, meta):
     today = now.date()
     start = now - timedelta(days=5)          # indicators ke warm-up ke liye pichhle din bhi
-    nifty = completed(A.candles(C.NIFTY_TOKEN, "NSE", "FIFTEEN_MINUTE", start, now), now, 15)
+    nifty = pd.DataFrame()
+    for attempt in range(3):            # Nifty na mile to poora scan skip hota tha -> 3 baar try
+        nifty = completed(A.candles(C.NIFTY_TOKEN, "NSE", "FIFTEEN_MINUTE", start, now), now, 15)
+        if not nifty.empty:
+            break
+        time.sleep(5 * (attempt + 1))
     if nifty.empty:
         print("Nifty data nahi mila - scan skip", flush=True)
         return []
@@ -192,6 +197,17 @@ def try_enter(cand, now, contracts, positions, meta):
         append_csv(SIG_F, SIG_COLS, {**log, "action": "SKIP", "note": note})
         print(f"SKIP {key}: {note}", flush=True)
 
+    def retry_later(note):
+        # Data hi nahi aaya (Angel rate-limit) -> stock ko aaj ke liye block mat karo, agle run me dobara.
+        # Par 2 baar se zyada nahi (sach me 0 volume wala option roz API na khaye).
+        tries = meta.setdefault("retries", {})
+        tries[cand["stock"]] = tries.get(cand["stock"], 0) + 1
+        if tries[cand["stock"]] > 2:
+            return skip(note + " - 3 baar, ab skip")
+        meta["stocks_today"].remove(cand["stock"])
+        append_csv(SIG_F, SIG_COLS, {**log, "action": "RETRY", "note": note})
+        print(f"RETRY {key}: {note}", flush=True)
+
     if len(positions) >= C.MAX_OPEN:
         return skip(f"max {C.MAX_OPEN} position khuli")
     if meta["trades"] >= C.MAX_TRADES_PER_DAY:
@@ -199,9 +215,17 @@ def try_enter(cand, now, contracts, positions, meta):
     con = pick_contract(contracts, cand["stock"], cand["spot"], cand["side"], now.date())
     if con is None:
         return skip("option contract nahi mila")
-    oc = A.candles(con["token"], "NFO", "FIVE_MINUTE", now.replace(hour=9, minute=15, second=0, microsecond=0), now)
+    day_start = now.replace(hour=9, minute=15, second=0, microsecond=0)
+    oc = A.candles(con["token"], "NFO", "FIVE_MINUTE", day_start, now)
+    if oc.empty:
+        time.sleep(3)
+        oc = A.candles(con["token"], "NFO", "FIVE_MINUTE", day_start, now)
+    if oc.empty:
+        return retry_later("option candle data nahi mila")
     opt_vol = float(oc["volume"].sum()) if len(oc) else 0.0
     price = A.ltp("NFO", con["symbol"], con["token"]) or (float(oc["close"].iloc[-1]) if len(oc) else None)
+    if not price and oc.empty:
+        return retry_later("option ka daam/data nahi mila")
     if not price or price < C.MIN_PREMIUM:
         return skip(f"premium {price} bahut kam / nahi mila")
     # Angel NFO candle volume LOTS (contracts) me deta hai, shares me nahi (28 Oct check: RELIANCE
@@ -228,7 +252,7 @@ def try_enter(cand, now, contracts, positions, meta):
          f"Stock: {cand['stock']} @ {cand['spot']:.2f} | Vol {cand['vol_x']}x\n"
          f"Premium: <b>{price:.2f}</b> | Lot {con['lot']} | Cost Rs {cost:,.0f}\n"
          f"SL {lv['sl']} (-{int(C.SL_PCT*100)}%) | Target {lv['target']} (+{int(C.TARGET_PCT*100)}%)\n"
-         f"Exit 3:15 PM tak | Breakout fail = exit")
+         f"Exit 3:15 PM tak" + (" | Breakout fail = exit" if C.USE_OR_FAIL_EXIT else ""))
     print(f"ENTRY {con['symbol']} @ {price}", flush=True)
     return pos
 
