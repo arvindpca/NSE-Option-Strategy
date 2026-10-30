@@ -1,0 +1,219 @@
+F&O STOCK OPTION BUYING - BACKTEST (APPROX)
+============================================================
+Stocks 218 | Data 2025-10-31 se 2026-10-30
+Rules: ATM option, SL -25%, Target +50%, breakeven +25%, exit 15:15, max 3 open, 4/din, 1 lot <= Rs 20,000
+Cost Rs 60/trade + slippage 1% | IV = 20d vol x 1.1
+
+DHYAN DE: premium formula se andaaza hai (asli option data nahi). Asli me IV badalta hai,
+spread hota hai. Isliye pehle 3-4 hafte PAPER trading ka result dekho, phir hi paisa lagao.
+
+VERSIONS KA MUKABLA (same data, sirf rule badle):
+  A: purane rules (v1)           Trades 808 | Win 29.8% | Kul P&L Rs -239,659 | Avg Rs -297 | PF 0.78 | Max DD Rs -296,168
+  B: breakout-fail exit hatao    Trades 733 | Win 40.7% | Kul P&L Rs -130,491 | Avg Rs -178 | PF 0.89 | Max DD Rs -242,835
+  E: B + vol 2x + lot<=20k (LIVE v2) Trades 557 | Win 43.6% | Kul P&L Rs 111,721 | Avg Rs 201 | PF 1.17 | Max DD Rs -55,787
+  F: E + entry 10:15 ke baad     Trades 447 | Win 42.3% | Kul P&L Rs 26,152 | Avg Rs 59 | PF 1.05 | Max DD Rs -72,590
+  E @ slippage 0.5%              Trades 557 | Win 45.2% | Kul P&L Rs 191,193 | Avg Rs 343 | PF 1.32 | Max DD Rs -50,381
+  F @ slippage 0.5%              Trades 447 | Win 44.3% | Kul P&L Rs 89,211 | Avg Rs 200 | PF 1.19 | Max DD Rs -56,395
+
+NAYA DATA (loss analysis me nahi dekha, 29 Jun 2026 se pehle):
+  A: purane rules (v1)           Trades 517 | Win 29.0% | Kul P&L Rs -171,582 | Avg Rs -332 | PF 0.76 | Max DD Rs -212,124
+  B: breakout-fail exit hatao    Trades 472 | Win 40.0% | Kul P&L Rs -122,128 | Avg Rs -259 | PF 0.84 | Max DD Rs -163,996
+  E: B + vol 2x + lot<=20k (LIVE v2) Trades 342 | Win 42.1% | Kul P&L Rs 40,026 | Avg Rs 117 | PF 1.10 | Max DD Rs -55,787
+  F: E + entry 10:15 ke baad     Trades 264 | Win 40.9% | Kul P&L Rs -13,947 | Avg Rs -53 | PF 0.96 | Max DD Rs -72,590
+  E @ slippage 0.5%              Trades 342 | Win 43.3% | Kul P&L Rs 89,037 | Avg Rs 260 | PF 1.23 | Max DD Rs -50,381
+  F @ slippage 0.5%              Trades 264 | Win 42.4% | Kul P&L Rs 23,345 | Avg Rs 88 | PF 1.08 | Max DD Rs -56,395
+
+PURANA DATA (jispe loss analysis hua, 29 Jun 2026 ke baad):
+  A: purane rules (v1)           Trades 291 | Win 31.3% | Kul P&L Rs -68,076 | Avg Rs -234 | PF 0.82 | Max DD Rs -98,592
+  B: breakout-fail exit hatao    Trades 261 | Win 41.8% | Kul P&L Rs -8,363 | Avg Rs -32 | PF 0.98 | Max DD Rs -106,058
+  E: B + vol 2x + lot<=20k (LIVE v2) Trades 215 | Win 46.0% | Kul P&L Rs 71,695 | Avg Rs 333 | PF 1.32 | Max DD Rs -26,264
+  F: E + entry 10:15 ke baad     Trades 183 | Win 44.3% | Kul P&L Rs 40,099 | Avg Rs 219 | PF 1.22 | Max DD Rs -34,110
+  E @ slippage 0.5%              Trades 215 | Win 48.4% | Kul P&L Rs 102,156 | Avg Rs 475 | PF 1.49 | Max DD Rs -23,164
+  F @ slippage 0.5%              Trades 183 | Win 47.0% | Kul P&L Rs 65,866 | Avg Rs 360 | PF 1.39 | Max DD Rs -28,601
+
+Mahine ke hisaab se P&L (Rs):
+                  A        B        E        F   E 0.5%   F 0.5%
+entry_time                                                      
+2025-11    -41967.0 -62513.0 -38572.0 -21425.0 -32025.0 -16027.0
+2025-12     20263.0  52111.0  45338.0  28064.0  53775.0  34962.0
+2026-01    -22534.0 -37784.0  40075.0  35948.0  47893.0  41985.0
+2026-02    -42523.0 -63583.0 -29091.0 -24053.0 -24012.0 -20327.0
+2026-03     20511.0  46427.0  33023.0  -6443.0  38807.0  -3595.0
+2026-04    -13816.0 -12501.0  15352.0 -10701.0  20405.0  -7098.0
+2026-05    -43707.0 -24104.0 -24379.0 -15645.0 -18707.0 -11163.0
+2026-06    -56662.0 -28725.0  -1394.0    636.0   3367.0   5076.0
+2026-07    -30571.0 -24316.0  12804.0  -2380.0  21160.0   4957.0
+2026-08    -51831.0 -56712.0   6584.0  11048.0  12661.0  16367.0
+2026-09      9657.0   6422.0  18608.0 -13985.0  25861.0  -8452.0
+2026-10     13522.0  74786.0  33372.0  45089.0  42007.0  52527.0
+
+Neeche ki detail + LOSS ANALYSIS: LIVE version (E)
+
+KUL:      Trades 557 | Win 43.6% | Kul P&L Rs 111,721 | Avg Rs 201 | PF 1.17 | Max DD Rs -55,787
+1st half: Trades 276 | Win 42.0% | Kul P&L Rs 55,498 | Avg Rs 201 | PF 1.18 | Max DD Rs -55,787
+2nd half: Trades 281 | Win 45.2% | Kul P&L Rs 56,223 | Avg Rs 200 | PF 1.17 | Max DD Rs -31,978
+CALL(CE): Trades 293 | Win 42.3% | Kul P&L Rs 72,600 | Avg Rs 248 | PF 1.20 | Max DD Rs -50,971
+PUT(PE):  Trades 264 | Win 45.1% | Kul P&L Rs 39,121 | Avg Rs 148 | PF 1.14 | Max DD Rs -48,105
+
+Mahine ke hisaab se:
+         trades      pnl    avg  win_pct
+month                                   
+2025-11      48 -38572.0 -804.0     27.0
+2025-12      61  45338.0  743.0     54.0
+2026-01      56  40075.0  716.0     46.0
+2026-02      36 -29091.0 -808.0     28.0
+2026-03      37  33023.0  893.0     51.0
+2026-04      32  15352.0  480.0     44.0
+2026-05      38 -24379.0 -642.0     37.0
+2026-06      35  -1394.0  -40.0     46.0
+2026-07      56  12804.0  229.0     38.0
+2026-08      43   6584.0  153.0     44.0
+2026-09      57  18608.0  326.0     56.0
+2026-10      58  33372.0  575.0     45.0
+
+Entry time ke hisaab se:
+       trades      pnl    avg  win_pct
+hour                                  
+10:00     358  71315.0  199.0     43.0
+11:00      92  12020.0  131.0     41.0
+12:00      73  -4200.0  -58.0     42.0
+13:00      34  32586.0  958.0     62.0
+
+Exit reason:
+           trades       pnl     avg  win_pct
+reason                                      
+BREAKEVEN      46  -15648.0  -340.0      0.0
+SL            118 -406379.0 -3444.0      0.0
+TARGET         68  405873.0  5969.0    100.0
+TIME          325  127875.0   393.0     54.0
+
+Sabse zyada trade wale stocks (top 15):
+            trades      pnl
+stock                      
+SYRMA           11  -6592.0
+ABCAPITAL       10  -8185.0
+HAVELLS         10   8097.0
+BDL              9  -4099.0
+GODREJPROP       9   7909.0
+MAZDOCK          9   9975.0
+KFINTECH         8  13394.0
+BLUESTARCO       7  -1080.0
+DABUR            7  -6690.0
+ICICIGI          7 -10889.0
+RVNL             7  -5484.0
+360ONE           7  -6111.0
+CDSL             7   4420.0
+PGEL             7   8386.0
+RECLTD           7  -2065.0
+
+============================================================
+LOSS ANALYSIS (live version)
+============================================================
+Gross (bina kharche) Rs 316,044 | Slippage -Rs 159,065 | Charges -Rs 45,258 | NET Rs 111,721
+Avg kharcha per trade Rs 367
+
+Avg jeet Rs 3,094 | Avg haar Rs -2,039 | Sabse badi haar Rs -5,430 | Lagatar haar max 12
+
+Exit reason:
+           trades       pnl     avg  win_pct
+reason                                      
+BREAKEVEN      46  -15648.0  -340.0      0.0
+SL            118 -406379.0 -3444.0      0.0
+TARGET         68  405873.0  5969.0    100.0
+TIME          325  127875.0   393.0     54.0
+
+Side:
+      trades      pnl    avg  win_pct
+side                                 
+CE       293  72600.0  248.0     42.0
+PE       264  39121.0  148.0     45.0
+
+Kitni der trade khula raha (minute):
+          trades      pnl    avg  win_pct
+hold_min                                 
+<30           40  23559.0  589.0     40.0
+30-60         32  -9124.0 -285.0     25.0
+60-120        82  -7151.0  -87.0     38.0
+120-240      164  22331.0  136.0     41.0
+240+         239  82106.0  344.0     50.0
+
+Volume kitna guna:
+       trades      pnl    avg  win_pct
+vol_x                                 
+2-2.5     177   4107.0   23.0     46.0
+2.5-3     105   7419.0   71.0     41.0
+3-4       122 -29002.0 -238.0     37.0
+4-6        88  84621.0  962.0     49.0
+6+         65  44576.0  686.0     46.0
+
+1 lot ki cost (Rs):
+        trades      pnl    avg  win_pct
+cost                                   
+<5k          9   1659.0  184.0     44.0
+5-10k       93  23290.0  250.0     43.0
+10-15k     199  42565.0  214.0     44.0
+15-20k     256  44207.0  173.0     44.0
+
+IV (volatility):
+        trades      pnl    avg  win_pct
+iv                                     
+<25%       215  83050.0  386.0     48.0
+25-35%     222  56607.0  255.0     42.0
+35-50%      96  -7290.0  -76.0     41.0
+50%+        24 -20646.0 -860.0     29.0
+
+Expiry me kitne din:
+       trades      pnl    avg  win_pct
+dte                                   
+5-10      129 -21459.0 -166.0     37.0
+10-20     212  40129.0  189.0     42.0
+20-30     162  90160.0  557.0     48.0
+30+        54   2890.0   54.0     50.0
+
+Hafte ka din:
+     trades      pnl     avg  win_pct
+day                                  
+Fri      96  83864.0   874.0     53.0
+Mon     104  21478.0   207.0     44.0
+Sun       2  -5987.0 -2993.0      0.0
+Thu     114  -3823.0   -34.0     38.0
+Tue     117   3928.0    34.0     44.0
+Wed     124  12260.0    99.0     42.0
+
+RSI (entry candle):
+           trades      pnl    avg  win_pct
+rsi_b                                     
+(0, 25]        55 -28616.0 -520.0     36.0
+(25, 35]      141  31084.0  220.0     45.0
+(35, 45]       68  36653.0  539.0     51.0
+(55, 65]       61  -3158.0  -52.0     38.0
+(65, 75]      171  30811.0  180.0     42.0
+(75, 100]      61  44947.0  737.0     49.0
+
+Sabse zyada nuksaan wale stocks (top 10):
+            trades      pnl
+stock                      
+MANKIND          7 -15880.0
+LUPIN            3 -11274.0
+ICICIGI          7 -10889.0
+ABCAPITAL       10  -8185.0
+PRESTIGE         2  -7934.0
+MPHASIS          2  -7892.0
+MANAPPURAM       4  -7598.0
+ASIANPAINT       3  -6720.0
+DABUR            7  -6690.0
+ADANIGREEN       2  -6635.0
+
+Sabse zyada munafe wale stocks (top 10):
+           trades      pnl
+stock                     
+CUB             6  19053.0
+TIINDIA         5  17245.0
+COFORGE         3  15558.0
+SONACOMS        4  14480.0
+KFINTECH        8  13394.0
+MARICO          4  12499.0
+VOLTAS          3  11510.0
+HDFCLIFE        6  11241.0
+JUBLFOOD        5  11126.0
+MAXHEALTH       4  10978.0

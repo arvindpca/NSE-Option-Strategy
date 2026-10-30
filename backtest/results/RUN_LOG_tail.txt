@@ -1,80 +1,80 @@
-  B: breakout-fail exit hatao    Trades 183 | Win 39.3% | Kul P&L Rs -75,999 | Avg Rs -415 | PF 0.75 | Max DD Rs -96,118
-  E: B + vol 2x + lot<=20k       Trades 149 | Win 47.0% | Kul P&L Rs 43,386 | Avg Rs 291 | PF 1.28 | Max DD Rs -25,549
-  F: E + entry 10:15 ke baad     Trades 125 | Win 44.0% | Kul P&L Rs 11,585 | Avg Rs 93 | PF 1.09 | Max DD Rs -29,640
-  E @ slippage 0.5%              Trades 149 | Win 49.7% | Kul P&L Rs 64,153 | Avg Rs 431 | PF 1.44 | Max DD Rs -19,381
-  F @ slippage 0.5%              Trades 125 | Win 45.6% | Kul P&L Rs 28,736 | Avg Rs 230 | PF 1.24 | Max DD Rs -24,275
+       trades      pnl    avg  win_pct
+vol_x                                 
+2-2.5     177   4107.0   23.0     46.0
+2.5-3     105   7419.0   71.0     41.0
+3-4       122 -29002.0 -238.0     37.0
+4-6        88  84621.0  962.0     49.0
+6+         65  44576.0  686.0     46.0
 
-Mahine ke hisaab se P&L (Rs):
-                  A        B        E        F   E 0.5%   F 0.5%
-entry_time                                                      
-2025-11    -44316.0 -65568.0 -41627.0 -21425.0 -35023.0 -16027.0
-2025-12     20263.0  52111.0  45338.0  29141.0  53775.0  35904.0
-2026-01    -24999.0 -37471.0  41463.0  37337.0  49321.0  43413.0
-2026-02    -42523.0 -63583.0 -32303.0 -27265.0 -27047.0 -23362.0
-2026-03     15368.0  48917.0  33023.0  -6443.0  38807.0  -3595.0
-2026-04    -17647.0 -11390.0  14114.0  -7587.0  19096.0  -3998.0
-2026-05    -49124.0 -16350.0 -18412.0 -14694.0 -12622.0 -10016.0
-2026-06    -56924.0 -28725.0   1819.0  -1694.0   6872.0   2751.0
-2026-07    -35734.0 -29478.0  16981.0   2639.0  25327.0   9815.0
-2026-08    -51542.0 -46300.0   6612.0  11048.0  12681.0  16367.0
-2026-09     12576.0   8323.0  19465.0  -2429.0  25677.0   2087.0
+1 lot ki cost (Rs):
+        trades      pnl    avg  win_pct
+cost                                   
+<5k          9   1659.0  184.0     44.0
+5-10k       93  23290.0  250.0     43.0
+10-15k     199  42565.0  214.0     44.0
+15-20k     256  44207.0  173.0     44.0
 
-Neeche ki detail: version A (purane rules)
+IV (volatility):
+        trades      pnl    avg  win_pct
+iv                                     
+<25%       215  83050.0  386.0     48.0
+25-35%     222  56607.0  255.0     42.0
+35-50%      96  -7290.0  -76.0     41.0
+50%+        24 -20646.0 -860.0     29.0
 
-KUL:      Trades 715 | Win 29.2% | Kul P&L Rs -274,603 | Avg Rs -384 | PF 0.72 | Max DD Rs -320,576
-1st half: Trades 357 | Win 31.4% | Kul P&L Rs -79,993 | Avg Rs -224 | PF 0.82 | Max DD Rs -132,189
-2nd half: Trades 358 | Win 27.1% | Kul P&L Rs -194,610 | Avg Rs -544 | PF 0.65 | Max DD Rs -229,124
-CALL(CE): Trades 362 | Win 28.2% | Kul P&L Rs -161,358 | Avg Rs -446 | PF 0.70 | Max DD Rs -179,328
-PUT(PE):  Trades 353 | Win 30.3% | Kul P&L Rs -113,245 | Avg Rs -321 | PF 0.75 | Max DD Rs -172,699
+Expiry me kitne din:
+       trades      pnl    avg  win_pct
+dte                                   
+5-10      129 -21459.0 -166.0     37.0
+10-20     212  40129.0  189.0     42.0
+20-30     162  90160.0  557.0     48.0
+30+        54   2890.0   54.0     50.0
 
-Mahine ke hisaab se:
-         trades      pnl    avg  win_pct
-month                                   
-2025-11      65 -44316.0 -682.0     23.0
-2025-12      76  20263.0  267.0     43.0
-2026-01      73 -24999.0 -342.0     26.0
-2026-02      62 -42523.0 -686.0     27.0
-2026-03      59  15368.0  260.0     34.0
-2026-04      61 -17647.0 -289.0     31.0
-2026-05      59 -49124.0 -833.0     22.0
-2026-06      66 -56924.0 -862.0     21.0
-2026-07      75 -35734.0 -476.0     27.0
-2026-08      61 -51542.0 -845.0     25.0
-2026-09      58  12576.0  217.0     41.0
+Hafte ka din:
+     trades      pnl     avg  win_pct
+day                                  
+Fri      96  83864.0   874.0     53.0
+Mon     104  21478.0   207.0     44.0
+Sun       2  -5987.0 -2993.0      0.0
+Thu     114  -3823.0   -34.0     38.0
+Tue     117   3928.0    34.0     44.0
+Wed     124  12260.0    99.0     42.0
 
-Entry time ke hisaab se:
-       trades       pnl    avg  win_pct
-hour                                   
-10:00     519 -120600.0 -232.0     29.0
-11:00     107 -105762.0 -988.0     28.0
-12:00      64  -59972.0 -937.0     23.0
-13:00      25   11731.0  469.0     44.0
+RSI (entry candle):
+           trades      pnl    avg  win_pct
+rsi_b                                     
+(0, 25]        55 -28616.0 -520.0     36.0
+(25, 35]      141  31084.0  220.0     45.0
+(35, 45]       68  36653.0  539.0     51.0
+(55, 65]       61  -3158.0  -52.0     38.0
+(65, 75]      171  30811.0  180.0     42.0
+(75, 100]      61  44947.0  737.0     49.0
 
-Exit reason:
-           trades       pnl     avg  win_pct
-reason                                      
-BREAKEVEN      48  -17794.0  -371.0      0.0
-OR_FAIL       375 -786105.0 -2096.0      0.0
-SL             38 -147884.0 -3892.0      0.0
-TARGET         47  296873.0  6316.0    100.0
-TIME          207  380307.0  1837.0     78.0
-
-Sabse zyada trade wale stocks (top 15):
+Sabse zyada nuksaan wale stocks (top 10):
             trades      pnl
 stock                      
-SYRMA           10   7203.0
-MAZDOCK         10  -1507.0
-GODREJPROP      10   4081.0
-JINDALSTEL       9  -8123.0
-ATHERENERG       9 -10296.0
-BPCL             9  -2809.0
-PIIND            9  -5001.0
-CAMS             8  -3390.0
-HAVELLS          8  -5245.0
-KFINTECH         8   2801.0
-RECLTD           8  -6732.0
-DLF              8 -12176.0
-PGEL             8  -1927.0
-PHOENIXLTD       8   2369.0
-HDFCLIFE         8   3672.0
+MANKIND          7 -15880.0
+LUPIN            3 -11274.0
+ICICIGI          7 -10889.0
+ABCAPITAL       10  -8185.0
+PRESTIGE         2  -7934.0
+MPHASIS          2  -7892.0
+MANAPPURAM       4  -7598.0
+ASIANPAINT       3  -6720.0
+DABUR            7  -6690.0
+ADANIGREEN       2  -6635.0
+
+Sabse zyada munafe wale stocks (top 10):
+           trades      pnl
+stock                     
+CUB             6  19053.0
+TIINDIA         5  17245.0
+COFORGE         3  15558.0
+SONACOMS        4  14480.0
+KFINTECH        8  13394.0
+MARICO          4  12499.0
+VOLTAS          3  11510.0
+HDFCLIFE        6  11241.0
+JUBLFOOD        5  11126.0
+MAXHEALTH       4  10978.0
 

@@ -1,16 +1,3 @@
-2026-10-12 12:32 | F&O stocks 3 | open 2
-RUN {'scanned': 3, 'start_at': 0, 'scan_secs': 0, 'signals': [], 'time': '2026-10-12 12:32', 'fno': 3, 'open': 2, 'trades_today': 2, 'angel': {'calls': 0, 'empty': 0, 'rate_limit': 0, 'errors': 0, 'secs': 0.0, 'last_msg': ''}}
-done
-2026-10-12 12:47 | F&O stocks 3 | open 2
-  [TG] ✅ <b>PAPER EXIT</b> AAA27OCT261150CE | AAA CE | Entry 19.47 → Exit 29.21 | Reason: TARGET | P&L: <b>+Rs 2,253</b> (250 qty)
-EXIT AAA27OCT261150CE TARGET 19.47->29.21 pnl 2253.3
-  [TG] ✅ <b>PAPER EXIT</b> CCC27OCT262000CE | CCC CE | Entry 44.57 → Exit 66.86 | Reason: TARGET | P&L: <b>+Rs 3,116</b> (150 qty)
-EXIT CCC27OCT262000CE TARGET 44.57->66.86 pnl 3116.36
-RUN {'scanned': 3, 'start_at': 0, 'scan_secs': 0, 'signals': [], 'time': '2026-10-12 12:47', 'fno': 3, 'open': 0, 'trades_today': 2, 'angel': {'calls': 0, 'empty': 0, 'rate_limit': 0, 'errors': 0, 'secs': 0.0, 'last_msg': ''}}
-done
-2026-10-12 13:02 | F&O stocks 3 | open 0
-RUN {'scanned': 3, 'start_at': 0, 'scan_secs': 0, 'signals': [], 'time': '2026-10-12 13:02', 'fno': 3, 'open': 0, 'trades_today': 2, 'angel': {'calls': 0, 'empty': 0, 'rate_limit': 0, 'errors': 0, 'secs': 0.0, 'last_msg': ''}}
-done
 2026-10-12 13:17 | F&O stocks 3 | open 0
 RUN {'scanned': 3, 'start_at': 0, 'scan_secs': 0, 'signals': [], 'time': '2026-10-12 13:17', 'fno': 3, 'open': 0, 'trades_today': 2, 'angel': {'calls': 0, 'empty': 0, 'rate_limit': 0, 'errors': 0, 'secs': 0.0, 'last_msg': ''}}
 done
@@ -36,7 +23,7 @@ done
 RUN {'scanned': 3, 'start_at': 0, 'scan_secs': 0, 'signals': [], 'time': '2026-10-12 15:02', 'fno': 3, 'open': 0, 'trades_today': 2, 'angel': {'calls': 0, 'empty': 0, 'rate_limit': 0, 'errors': 0, 'secs': 0.0, 'last_msg': ''}}
 done
 2026-10-12 15:17 | F&O stocks 3 | open 0
-  [TG] 📊 <b>Aaj ka paper result</b> (2026-10-12) | Trades 2 | Win 2 | Loss 0 | P&L: <b>+Rs 5,370</b>
+  [TG] 📊 <b>Aaj ka paper result</b> (2026-10-12) | Trades 2 | Win 2 | Loss 0 | Gross: +Rs 5,778 | Kharcha: -Rs 421 | Net P&L: <b>+Rs 5,357</b>
 RUN {'scanned': 3, 'start_at': 0, 'scan_secs': 0, 'signals': [], 'time': '2026-10-12 15:17', 'fno': 3, 'open': 0, 'trades_today': 2, 'angel': {'calls': 0, 'empty': 0, 'rate_limit': 0, 'errors': 0, 'secs': 0.0, 'last_msg': ''}}
 done
 2026-10-12 15:32 | F&O stocks 3 | open 0
@@ -47,13 +34,26 @@ done
 ## Khuli positions (0)
 Koi nahi
 
-## Ab tak ka result (sab paper trades)
-Trades 2 | Win 100% | Kul P&L +Rs 5,370 | Avg +Rs 2,685
+## Ab tak ka result (v2 / version E, 2 Nov 2026 se)
+Trades 2 | Win 100% | Avg net +Rs 2,679
 
-| Date | Option | Reason | Entry | Exit | P&L |
-|---|---|---|---|---|---|
-| 2026-10-12 | CCC27OCT262000CE | TARGET | 44.57 | 66.86 | 3116 |
-| 2026-10-12 | AAA27OCT261150CE | TARGET | 19.47 | 29.21 | 2253 |
+| | Rs |
+|---|---|
+| Gross P&L (bina kharche) | +Rs 5,778 |
+| Slippage | -Rs 289 |
+| Charges (brokerage+STT+GST..) | -Rs 133 |
+| **Net P&L** | **+Rs 5,357** |
+
+## Din ke hisaab se
+| Date | Trades | Gross | Net |
+|---|---|---|---|
+| 2026-10-12 | 2 | 5,778 | 5,357 |
+
+## Aakhri 15 trades
+| Date | Option | Reason | Entry | Exit | Gross | Net |
+|---|---|---|---|---|---|---|
+| 2026-10-12 | CCC27OCT262000CE | TARGET | 44.57 | 66.86 | 3344 | 3107 |
+| 2026-10-12 | AAA27OCT261150CE | TARGET | 19.47 | 29.21 | 2435 | 2250 |
 
 live paper OK
 
