@@ -1,80 +1,8 @@
-       trades      pnl    avg  win_pct
-vol_x                                 
-2-2.5     177   4107.0   23.0     46.0
-2.5-3     105   7419.0   71.0     41.0
-3-4       122 -29002.0 -238.0     37.0
-4-6        88  84621.0  962.0     49.0
-6+         65  44576.0  686.0     46.0
-
-1 lot ki cost (Rs):
-        trades      pnl    avg  win_pct
-cost                                   
-<5k          9   1659.0  184.0     44.0
-5-10k       93  23290.0  250.0     43.0
-10-15k     199  42565.0  214.0     44.0
-15-20k     256  44207.0  173.0     44.0
-
-IV (volatility):
-        trades      pnl    avg  win_pct
-iv                                     
-<25%       215  83050.0  386.0     48.0
-25-35%     222  56607.0  255.0     42.0
-35-50%      96  -7290.0  -76.0     41.0
-50%+        24 -20646.0 -860.0     29.0
-
-Expiry me kitne din:
-       trades      pnl    avg  win_pct
-dte                                   
-5-10      129 -21459.0 -166.0     37.0
-10-20     212  40129.0  189.0     42.0
-20-30     162  90160.0  557.0     48.0
-30+        54   2890.0   54.0     50.0
-
-Hafte ka din:
-     trades      pnl     avg  win_pct
-day                                  
-Fri      96  83864.0   874.0     53.0
-Mon     104  21478.0   207.0     44.0
-Sun       2  -5987.0 -2993.0      0.0
-Thu     114  -3823.0   -34.0     38.0
-Tue     117   3928.0    34.0     44.0
-Wed     124  12260.0    99.0     42.0
-
-RSI (entry candle):
-           trades      pnl    avg  win_pct
-rsi_b                                     
-(0, 25]        55 -28616.0 -520.0     36.0
-(25, 35]      141  31084.0  220.0     45.0
-(35, 45]       68  36653.0  539.0     51.0
-(55, 65]       61  -3158.0  -52.0     38.0
-(65, 75]      171  30811.0  180.0     42.0
-(75, 100]      61  44947.0  737.0     49.0
-
-Sabse zyada nuksaan wale stocks (top 10):
-            trades      pnl
-stock                      
-MANKIND          7 -15880.0
-LUPIN            3 -11274.0
-ICICIGI          7 -10889.0
-ABCAPITAL       10  -8185.0
-PRESTIGE         2  -7934.0
-MPHASIS          2  -7892.0
-MANAPPURAM       4  -7598.0
-ASIANPAINT       3  -6720.0
-DABUR            7  -6690.0
-ADANIGREEN       2  -6635.0
-
-Sabse zyada munafe wale stocks (top 10):
-           trades      pnl
-stock                     
-CUB             6  19053.0
-TIINDIA         5  17245.0
-COFORGE         3  15558.0
-SONACOMS        4  14480.0
-KFINTECH        8  13394.0
-MARICO          4  12499.0
-VOLTAS          3  11510.0
-HDFCLIFE        6  11241.0
-JUBLFOOD        5  11126.0
-MAXHEALTH       4  10978.0
-
+[angel] scrip master download...
+DOWNLOAD 218 F&O stocks + Nifty | 365 din
+[I 261030 16:31:28 smartConnect:124] in pool
+[angel] login OK
+[angel-cache] naya login hua, session save kiya
+::notice title=Angel login::naya login hua, session save kiya
+  0/218
+  25/218
