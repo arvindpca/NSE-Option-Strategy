@@ -1,27 +1,6 @@
 [
  {
   "date": "2026-10-30",
-  "stock": "PGEL",
-  "stock_token": "25358",
-  "side": "CE",
-  "option": "PGEL23NOV26540CE",
-  "opt_token": "123194",
-  "expiry": "2026-11-23",
-  "strike": 540.0,
-  "lot": 950,
-  "qty": 950,
-  "entry_time": "2026-10-30 10:02",
-  "entry": 18.55,
-  "sl": 13.91,
-  "target": 27.83,
-  "spot_entry": 540.65,
-  "or_high": 536.15,
-  "or_low": 526.35,
-  "entry_candle": "2026-10-30T09:45:00+05:30",
-  "last_check": "2026-10-30T13:15:00+05:30"
- },
- {
-  "date": "2026-10-30",
   "stock": "BAJFINANCE",
   "stock_token": "317",
   "side": "CE",
@@ -39,6 +18,6 @@
   "or_high": 942.85,
   "or_low": 931.2,
   "entry_candle": "2026-10-30T12:45:00+05:30",
-  "last_check": "2026-10-30T13:02:00+05:30"
+  "last_check": "2026-10-30T13:30:00+05:30"
  }
 ]
