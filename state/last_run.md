@@ -1,12 +1,12 @@
 # Last run
 
-- scanned: 64
-- start_at: 69
+- scanned: 77
+- start_at: 133
 - scan_cut: True
-- scan_secs: 555
-- signals: []
-- time: 2026-10-30 09:47
+- scan_secs: 547
+- signals: ['PGEL CE']
+- time: 2026-10-30 10:02
 - fno: 218
-- open: 0
-- trades_today: 0
-- angel: {'calls': 131, 'empty': 14, 'rate_limit': 80, 'errors': 80, 'secs': 557.7067224979401, 'last_msg': "Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'"}
+- open: 1
+- trades_today: 1
+- angel: {'calls': 142, 'empty': 15, 'rate_limit': 78, 'errors': 78, 'secs': 558.5462563037872, 'last_msg': "Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'"}

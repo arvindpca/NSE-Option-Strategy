@@ -1,7 +1,9 @@
 {
  "date": "2026-10-30",
- "trades": 0,
- "stocks_today": [],
+ "trades": 1,
+ "stocks_today": [
+  "PGEL"
+ ],
  "summary_sent": false,
- "scan_offset": 133
+ "scan_offset": 210
 }
