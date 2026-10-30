@@ -16,7 +16,7 @@ permissions:
 jobs:
   backtest:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 300
     env:
       ANGEL_API_KEY: ${{ secrets.ANGEL_API_KEY }}
       ANGEL_CLIENT_ID: ${{ secrets.ANGEL_CLIENT_ID }}

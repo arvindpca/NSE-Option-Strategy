@@ -86,6 +86,8 @@ def simulate(day: pd.DataFrame, i: int, side: str, iv: float, lot: int):
     def prem(spot, t):
         return P.bs_price(spot, k, P.years_left(t.to_pydatetime(), expiry), iv, side)
 
+    if iv > getattr(C, "MAX_IV", 9.9):
+        return None
     entry = prem(sig["close"], t_entry)
     if entry < C.MIN_PREMIUM or entry * lot > C.MAX_COST_PER_TRADE:
         return None
@@ -122,14 +124,24 @@ def simulate(day: pd.DataFrame, i: int, side: str, iv: float, lot: int):
 R = {"REAL_CHARGES": True}
 OLD = {"USE_OR_FAIL_EXIT": True, "VOL_MULT": 1.5, "MAX_COST_PER_TRADE": 30_000}   # v1 rules
 NO_ORF = {"USE_OR_FAIL_EXIT": False}
-FIX = {**NO_ORF, "VOL_MULT": 2.0, "MAX_COST_PER_TRADE": 20_000}   # loss analysis wale sudhaar
+E_ = {**R, **NO_ORF, "VOL_MULT": 2.0, "MAX_COST_PER_TRADE": 20_000}             # live v2
+IV = {"MAX_IV": 0.35}
+DTE = {"MIN_DAYS_TO_EXPIRY": 10}
+RPE = {"RSI_PE_MIN": 25}
+G_ = {**E_, **IV, **DTE, **RPE}
+# naam ka pehla shabd = column ka naam (mahine wali table)
 VARIANTS = [
-    ("A: purane rules (v1)", {**R, **OLD}),
-    ("B: breakout-fail exit hatao", {**R, **OLD, **NO_ORF}),
-    ("E: B + vol 2x + lot<=20k (LIVE v2)", {**R, **FIX}),
-    ("F: E + entry 10:15 ke baad", {**R, **FIX, "ENTRY_FROM": "10:15"}),
-    ("E @ slippage 0.5%", {**R, **FIX, "SLIPPAGE_PCT": 0.005}),
-    ("F @ slippage 0.5%", {**R, **FIX, "ENTRY_FROM": "10:15", "SLIPPAGE_PCT": 0.005}),
+    ("A    purane rules v1", {**R, **OLD}),
+    ("E    LIVE v2", E_),
+    ("E+IV   IV<35% hi", {**E_, **IV}),
+    ("E+DTE  expiry>=10 din", {**E_, **DTE}),
+    ("E+RSI  PUT sirf RSI>=25", {**E_, **RPE}),
+    ("G    E + teeno sudhaar", G_),
+    ("G+T100 target +100%", {**G_, "TARGET_PCT": 1.00}),
+    ("G+SL30 SL -30%", {**G_, "SL_PCT": 0.30}),
+    ("G+NoBE breakeven band", {**G_, "BREAKEVEN_AT": 9.0}),
+    ("G+12   entry 12:00 tak", {**G_, "ENTRY_UPTO": "12:00"}),
+    ("G@0.5% slippage 0.5%", {**G_, "SLIPPAGE_PCT": 0.005}),
 ]
 # Loss analysis 29 Jun - 23 Oct 2026 ke data pe hua tha. Usse PEHLE ka data = "naya data" (rules banate waqt nahi dekha)
 SPLIT = pd.Timestamp(os.getenv("SPLIT_DATE", "2026-06-29"), tz=IST)
@@ -179,7 +191,8 @@ def run():
     lots = pd.read_csv(DATA / "_lots.csv").set_index("name")["lot"].to_dict() if (DATA / "_lots.csv").exists() else {}
     files = sorted(p for p in DATA.glob("*.csv") if p.stem not in ("NIFTY", "_lots"))
     base = {k: getattr(C, k) for k in ("USE_OR_FAIL_EXIT", "ENTRY_FROM", "SL_PCT", "TARGET_PCT", "BREAKEVEN_AT",
-                                       "VOL_MULT", "MAX_COST_PER_TRADE", "SLIPPAGE_PCT", "REAL_CHARGES")}
+                                       "VOL_MULT", "MAX_COST_PER_TRADE", "SLIPPAGE_PCT", "REAL_CHARGES",
+                                       "MAX_IV", "MIN_DAYS_TO_EXPIRY", "RSI_PE_MIN", "ENTRY_UPTO")}
     results = []
     for name, changes in VARIANTS:
         for k, v in {**base, **changes}.items():
@@ -192,7 +205,18 @@ def run():
         print("Koi trade nahi bana - data / rules check karo")
         return
     live = next((t for n, t in results if "LIVE" in n), results[0][1])
+    best = max(results, key=lambda r: r[1]["pnl"].sum() if len(r[1]) else -1e18)
+    if best[1] is not live and len(best[1]):
+        OUT.mkdir(parents=True, exist_ok=True)
+        (OUT / "BEST_LOSS_ANALYSIS.txt").write_text(f"Sabse achha version: {best[0]}\n\n" + "\n".join(loss_analysis(best[1])) + "\n")
     report(live, len(files), nifty, results)
+
+
+def plus_months(t: pd.DataFrame) -> str:
+    if t.empty:
+        return "0/0"
+    m = t.groupby(t["entry_time"].dt.strftime("%Y-%m"))["pnl"].sum()
+    return f"{(m > 0).sum()}/{len(m)}"
 
 
 def stats(t: pd.DataFrame) -> str:
@@ -246,7 +270,7 @@ def report(tr: pd.DataFrame, n_stocks: int, nifty: pd.DataFrame, results=()):
     out = OUT / stamp
     out.mkdir(parents=True, exist_ok=True)
     for n, t in results:   # har version ke trades alag file me (A, B, E, F...)
-        t.to_csv(out / f"trades_{n[:1]}{'_slip05' if '0.5' in n else ''}.csv", index=False)
+        t.to_csv(out / f"trades_{n.split()[0].replace('+', '_').replace('@', '_').replace('%', '')}.csv", index=False)
     tr.to_csv(out / "trades.csv", index=False)
     tr["month"] = tr["entry_time"].dt.strftime("%Y-%m")
     tr["hour"] = tr["entry_time"].dt.strftime("%H:00")
@@ -265,7 +289,7 @@ def report(tr: pd.DataFrame, n_stocks: int, nifty: pd.DataFrame, results=()):
         "spread hota hai. Isliye pehle 3-4 hafte PAPER trading ka result dekho, phir hi paisa lagao.",
         "",
         "VERSIONS KA MUKABLA (same data, sirf rule badle):",
-        *[f"  {n:30s} {stats(t)}" for n, t in results],
+        *[f"  {n:30s} {stats(t)} | Plus mahine {plus_months(t)}" for n, t in results],
         "",
         f"NAYA DATA (loss analysis me nahi dekha, {SPLIT:%d %b %Y} se pehle):",
         *[f"  {n:30s} {stats(t[t['entry_time'] < SPLIT]) if len(t) else 'Trades 0'}" for n, t in results],
@@ -274,7 +298,7 @@ def report(tr: pd.DataFrame, n_stocks: int, nifty: pd.DataFrame, results=()):
         *[f"  {n:30s} {stats(t[t['entry_time'] >= SPLIT]) if len(t) else 'Trades 0'}" for n, t in results],
         "",
         "Mahine ke hisaab se P&L (Rs):",
-        pd.DataFrame({n[:1] + (" 0.5%" if "0.5" in n else ""): t.groupby(t["entry_time"].dt.strftime("%Y-%m"))["pnl"].sum()
+        pd.DataFrame({n.split()[0]: t.groupby(t["entry_time"].dt.strftime("%Y-%m"))["pnl"].sum()
                       for n, t in results if len(t)}).fillna(0).round(0).to_string(),
         "", "Neeche ki detail + LOSS ANALYSIS: LIVE version (E)", "",
         "KUL:      " + stats(tr),
