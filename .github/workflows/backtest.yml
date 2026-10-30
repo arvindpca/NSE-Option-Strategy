@@ -5,7 +5,7 @@ on:
     inputs:
       days:
         description: "Kitne din ka data (30-365)"
-        default: "120"
+        default: "365"
       max_symbols:
         description: "Kitne F&O stocks (0 = sab)"
         default: "0"

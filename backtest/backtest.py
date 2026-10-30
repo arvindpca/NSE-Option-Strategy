@@ -118,12 +118,19 @@ def simulate(day: pd.DataFrame, i: int, side: str, iv: float, lot: int):
 
 
 # ---------------------------------------------------------------- run
+R = {"REAL_CHARGES": True}          # sab versions me Angel ke asli charges
+NO_ORF = {"USE_OR_FAIL_EXIT": False}
+FIX = {**NO_ORF, "VOL_MULT": 2.0, "MAX_COST_PER_TRADE": 20_000}   # loss analysis wale sudhaar
 VARIANTS = [
-    ("A: abhi wale rules (v1)", {}),
-    ("B: breakout-fail exit hatao", {"USE_OR_FAIL_EXIT": False}),
-    ("C: B + entry 10:15 ke baad", {"USE_OR_FAIL_EXIT": False, "ENTRY_FROM": "10:15"}),
-    ("D: C + SL 35%", {"USE_OR_FAIL_EXIT": False, "ENTRY_FROM": "10:15", "SL_PCT": 0.35}),
+    ("A: purane rules (live abhi)", {**R}),
+    ("B: breakout-fail exit hatao", {**R, **NO_ORF}),
+    ("E: B + vol 2x + lot<=20k", {**R, **FIX}),
+    ("F: E + entry 10:15 ke baad", {**R, **FIX, "ENTRY_FROM": "10:15"}),
+    ("E @ slippage 0.5%", {**R, **FIX, "SLIPPAGE_PCT": 0.005}),
+    ("F @ slippage 0.5%", {**R, **FIX, "ENTRY_FROM": "10:15", "SLIPPAGE_PCT": 0.005}),
 ]
+# Loss analysis 29 Jun - 23 Oct 2026 ke data pe hua tha. Usse PEHLE ka data = "naya data" (rules banate waqt nahi dekha)
+SPLIT = pd.Timestamp(os.getenv("SPLIT_DATE", "2026-06-29"), tz=IST)
 
 
 def compute(files, nifty, lots):
@@ -169,7 +176,8 @@ def run():
     nifty = read_csv(DATA / "NIFTY.csv")
     lots = pd.read_csv(DATA / "_lots.csv").set_index("name")["lot"].to_dict() if (DATA / "_lots.csv").exists() else {}
     files = sorted(p for p in DATA.glob("*.csv") if p.stem not in ("NIFTY", "_lots"))
-    base = {k: getattr(C, k) for k in ("USE_OR_FAIL_EXIT", "ENTRY_FROM", "SL_PCT", "TARGET_PCT", "BREAKEVEN_AT")}
+    base = {k: getattr(C, k) for k in ("USE_OR_FAIL_EXIT", "ENTRY_FROM", "SL_PCT", "TARGET_PCT", "BREAKEVEN_AT",
+                                       "VOL_MULT", "MAX_COST_PER_TRADE", "SLIPPAGE_PCT", "REAL_CHARGES")}
     results = []
     for name, changes in VARIANTS:
         for k, v in {**base, **changes}.items():
@@ -217,8 +225,18 @@ def report(tr: pd.DataFrame, n_stocks: int, nifty: pd.DataFrame, results=()):
         "spread hota hai. Isliye pehle 3-4 hafte PAPER trading ka result dekho, phir hi paisa lagao.",
         "",
         "VERSIONS KA MUKABLA (same data, sirf rule badle):",
-        *[f"  {n:32s} {stats(t)}" for n, t in results],
-        "", "Neeche ki detail: version A (abhi wale rules)", "",
+        *[f"  {n:30s} {stats(t)}" for n, t in results],
+        "",
+        f"NAYA DATA (loss analysis me nahi dekha, {SPLIT:%d %b %Y} se pehle):",
+        *[f"  {n:30s} {stats(t[t['entry_time'] < SPLIT]) if len(t) else 'Trades 0'}" for n, t in results],
+        "",
+        f"PURANA DATA (jispe loss analysis hua, {SPLIT:%d %b %Y} ke baad):",
+        *[f"  {n:30s} {stats(t[t['entry_time'] >= SPLIT]) if len(t) else 'Trades 0'}" for n, t in results],
+        "",
+        "Mahine ke hisaab se P&L (Rs):",
+        pd.DataFrame({n[:1] + (" 0.5%" if "0.5" in n else ""): t.groupby(t["entry_time"].dt.strftime("%Y-%m"))["pnl"].sum()
+                      for n, t in results if len(t)}).fillna(0).round(0).to_string(),
+        "", "Neeche ki detail: version A (purane rules)", "",
         "KUL:      " + stats(tr),
         "1st half: " + stats(tr[tr["entry_time"] < half]),
         "2nd half: " + stats(tr[tr["entry_time"] >= half]),

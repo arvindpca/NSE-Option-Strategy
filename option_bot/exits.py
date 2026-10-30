@@ -26,8 +26,18 @@ def step(pos: dict, o: float, h: float, l: float):
     return None
 
 
+def charges(buy_val: float, sell_val: float) -> float:
+    """Angel One option charges (Oct 2026): brokerage Rs 20/order, STT 0.15% sell, exch 0.0355%,
+    SEBI Rs 10/cr, stamp 0.003% buy, GST 18%."""
+    if not getattr(C, "REAL_CHARGES", False):
+        return C.COST_PER_TRADE
+    turn = buy_val + sell_val
+    brok, exch, sebi = 40.0, 0.000355299 * turn, turn * 1e-6
+    return brok + exch + sebi + 0.0015 * sell_val + 0.00003 * buy_val + 0.18 * (brok + exch + sebi)
+
+
 def pnl(entry: float, exit_price: float, qty: int) -> float:
     """Slippage + charges ke baad Rs profit."""
     buy = entry * (1 + C.SLIPPAGE_PCT)
     sell = exit_price * (1 - C.SLIPPAGE_PCT)
-    return round((sell - buy) * qty - C.COST_PER_TRADE, 2)
+    return round((sell - buy) * qty - charges(buy * qty, sell * qty), 2)
