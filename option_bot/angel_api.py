@@ -26,6 +26,14 @@ def _clean(v):
 
 _client = None
 
+try:  # Angel login din me ek baar (session cache)
+    from option_bot import angel_session_cache as _session_cache
+except Exception:
+    try:
+        import angel_session_cache as _session_cache
+    except Exception:
+        _session_cache = None
+
 
 def login():
     global _client
@@ -42,6 +50,8 @@ def login():
         if data.get("status"):
             print("[angel] login OK", flush=True)
             _client = api
+            if _session_cache is not None:
+                _session_cache.save(api)
             return api
         print(f"[angel] login fail {attempt}/3: {data.get('message')} {data.get('errorcode', '')}", flush=True)
         time.sleep(max(2, 30 - int(time.time()) % 30))
@@ -49,6 +59,9 @@ def login():
 
 
 def client():
+    global _client
+    if _client is None and _session_cache is not None:
+        _client = _session_cache.load()
     return _client or login()
 
 

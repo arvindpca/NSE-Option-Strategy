@@ -37,6 +37,12 @@ jobs:
           cache: pip
       - name: Install
         run: pip install -r requirements.txt
+      - name: Restore Angel session (din me ek hi login)
+        uses: actions/cache/restore@v4
+        with:
+          path: .angel_session
+          key: angel-session-${{ github.run_id }}
+          restore-keys: angel-session-
       - name: Run paper trader
         run: python option_bot/paper_trader.py
       - name: Save state
@@ -51,3 +57,9 @@ jobs:
       - name: Summary
         if: always()
         run: '[ -f state/STATUS.md ] && cat state/STATUS.md >> "$GITHUB_STEP_SUMMARY" || true'
+      - name: Save Angel session (agle run ke liye)
+        if: always() && hashFiles('.angel_session/session.bin') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: .angel_session
+          key: angel-session-${{ github.run_id }}

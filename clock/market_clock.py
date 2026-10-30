@@ -36,19 +36,15 @@ def hm_s(s):
 
 # (repo, workflow file, token, due(minute_of_day_IST) -> bool)
 JOBS = [
+    # (reliance-paper / paper-swing yahan se hataye: wo workflows Indian-Stock repo me delete ho chuke the;
+    #  ab Intraday-hourly-Trend-SR ki apni clock unhe chalati hai)
     # Option paper: 9:32 se 15:32 tak har 15 min
     (OWN_REPO, "option-paper-live.yml", "own",
      lambda m: between(m, "09:32", "15:32") and m % 15 == 2),
-    # Reliance paper: 9:30 se 15:45 tak har 5 min
-    (STOCK_REPO, "reliance-paper.yml", "pat",
-     lambda m: between(m, "09:30", "15:45") and m % 5 == 0),
     # Intraday scanner: 9:15 se 15:30 tak har 15 min
     (STOCK_REPO, "intraday-scanner.yml", "pat",
      lambda m: between(m, "09:15", "15:30") and m % 15 == 0),
-    (STOCK_REPO, "paper-swing-3pm.yml", "pat", lambda m: m == hm_s("14:48")),
     (STOCK_REPO, "paper-trade-settle.yml", "pat", lambda m: m == hm_s("15:40")),
-    (STOCK_REPO, "paper-swing.yml", "pat",
-     lambda m: m in (hm_s("16:37"), hm_s("18:37"))),
 ]
 
 
