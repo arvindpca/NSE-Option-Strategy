@@ -1,109 +1,108 @@
-Sabse achha version: GTnoBE breakeven band
+Sabse achha version: V3nr  mahine ke aakhri din skip
 
 ============================================================
 LOSS ANALYSIS (live version)
 ============================================================
-Gross (bina kharche) Rs 312,512 | Slippage -Rs 119,003 | Charges -Rs 32,795 | NET Rs 160,714
-Avg kharcha per trade Rs 386
+Gross (bina kharche) Rs 402,433 | Slippage -Rs 91,521 | Charges -Rs 25,563 | NET Rs 285,349
+Avg kharcha per trade Rs 381
 
-Avg jeet Rs 3,184 | Avg haar Rs -2,242 | Sabse badi haar Rs -5,425 | Lagatar haar max 8
+Avg jeet Rs 3,762 | Avg haar Rs -2,154 | Sabse badi haar Rs -5,280 | Lagatar haar max 9
 
 Exit reason:
         trades       pnl      avg  win_pct
 reason                                    
-SL          67 -256457.0  -3828.0      0.0
-TARGET      12  160099.0  13342.0    100.0
-TIME       314  257072.0    819.0     57.0
+SL          45 -168959.0  -3755.0      0.0
+TARGET      15  208708.0  13914.0    100.0
+TIME       247  245600.0    994.0     59.0
 
 Side:
-      trades       pnl    avg  win_pct
-side                                  
-CE       217  111628.0  514.0     47.0
-PE       176   49086.0  279.0     52.0
+      trades       pnl     avg  win_pct
+side                                   
+CE       182  215578.0  1184.0     49.0
+PE       125   69771.0   558.0     57.0
 
 Kitni der trade khula raha (minute):
           trades       pnl     avg  win_pct
 hold_min                                   
-<30            5  -21056.0 -4211.0      0.0
-30-60          9    8044.0   894.0     22.0
-60-120        38  -13967.0  -368.0     45.0
-120-240      127   -3490.0   -27.0     47.0
-240+         214  191184.0   893.0     53.0
+<30            3  -12001.0 -4000.0      0.0
+30-60          7   14681.0  2097.0     29.0
+60-120        30   19982.0   666.0     50.0
+120-240       88   66900.0   760.0     47.0
+240+         179  195788.0  1094.0     57.0
 
 Volume kitna guna:
        trades      pnl     avg  win_pct
 vol_x                                  
-2-2.5     130  68607.0   528.0     52.0
-2.5-3      79  30950.0   392.0     51.0
-3-4        80 -60262.0  -753.0     36.0
-4-6        65  56297.0   866.0     54.0
-6+         39  65121.0  1670.0     54.0
+2-2.5      98  96474.0   984.0     57.0
+2.5-3      61  32080.0   526.0     54.0
+3-4        63 -19770.0  -314.0     38.0
+4-6        52  84103.0  1617.0     54.0
+6+         33  92463.0  2802.0     58.0
 
 1 lot ki cost (Rs):
-        trades       pnl    avg  win_pct
-cost                                    
-5-10k       37   36355.0  983.0     57.0
-10-15k     157   23804.0  152.0     48.0
-15-20k     199  100554.0  505.0     48.0
+        trades       pnl     avg  win_pct
+cost                                     
+5-10k       40   36372.0   909.0     60.0
+10-15k     128   96317.0   752.0     53.0
+15-20k     139  152660.0  1098.0     49.0
 
 IV (volatility):
-        trades       pnl    avg  win_pct
-iv                                      
-<25%       204   36679.0  180.0     46.0
-25-35%     189  124035.0  656.0     52.0
+        trades       pnl     avg  win_pct
+iv                                       
+<25%       151  121172.0   802.0     52.0
+25-35%     156  164177.0  1052.0     53.0
 
 Expiry me kitne din:
-       trades       pnl    avg  win_pct
-dte                                    
-10-20     160   75853.0  474.0     48.0
-20-30     131  109673.0  837.0     53.0
-30+       102  -24812.0 -243.0     46.0
+       trades       pnl     avg  win_pct
+dte                                     
+10-20     171  139298.0   815.0     51.0
+20-30     111  147051.0  1325.0     55.0
+30+        25   -1000.0   -40.0     48.0
 
 Hafte ka din:
-     trades      pnl     avg  win_pct
-day                                  
-Fri      72  59216.0   822.0     54.0
-Mon      68  52842.0   777.0     56.0
-Sun       1   3821.0  3821.0    100.0
-Thu      81  79060.0   976.0     48.0
-Tue      84 -28916.0  -344.0     42.0
-Wed      87  -5309.0   -61.0     46.0
+     trades       pnl     avg  win_pct
+day                                   
+Fri      64   84066.0  1314.0     58.0
+Mon      39   39727.0  1019.0     59.0
+Sun       1    3821.0  3821.0    100.0
+Thu      78  104109.0  1335.0     51.0
+Tue      54   33120.0   613.0     48.0
+Wed      71   20507.0   289.0     46.0
 
 RSI (entry candle):
-           trades      pnl     avg  win_pct
-rsi_b                                      
-(0, 25]         1   6882.0  6882.0    100.0
-(25, 35]      120  25166.0   210.0     50.0
-(35, 45]       55  17038.0   310.0     55.0
-(45, 55]        1  -3654.0 -3654.0      0.0
-(55, 65]       52  12617.0   243.0     48.0
-(65, 75]      131  56165.0   429.0     45.0
-(75, 100]      33  46501.0  1409.0     52.0
+           trades       pnl     avg  win_pct
+rsi_b                                       
+(25, 35]       86   43166.0   502.0     57.0
+(35, 45]       39   26605.0   682.0     56.0
+(45, 55]        1   -3654.0 -3654.0      0.0
+(55, 65]       42    6527.0   155.0     45.0
+(65, 75]      104  141451.0  1360.0     48.0
+(75, 100]      35   71254.0  2036.0     57.0
 
 Sabse zyada nuksaan wale stocks (top 10):
-            trades      pnl
-stock                      
-DABUR            6 -10034.0
-PIDILITIND       5  -9464.0
-BDL              9  -9438.0
-JINDALSTEL       4  -8397.0
-TATASTEEL        4  -7641.0
-ICICIGI          6  -7227.0
-ANANDRATHI       4  -7166.0
-ADANIGREEN       3  -6812.0
-PHOENIXLTD       3  -6804.0
-LUPIN            2  -6772.0
+            trades     pnl
+stock                     
+TATASTEEL        4 -7641.0
+ADANIGREEN       3 -6812.0
+LUPIN            2 -6772.0
+RVNL             2 -6766.0
+JIOFIN           2 -5006.0
+SRF              3 -4891.0
+PRESTIGE         1 -4638.0
+LODHA            1 -4624.0
+MANKIND          2 -4622.0
+ADANIPORTS       2 -4584.0
 
 Sabse zyada munafe wale stocks (top 10):
             trades      pnl
 stock                      
-KFINTECH         8  23448.0
-MAZDOCK          6  21359.0
+KPITTECH         2  27728.0
+SONACOMS         4  23921.0
+HINDUNILVR       3  21769.0
+MARICO           3  21350.0
 PGEL             2  20863.0
+MAZDOCK          5  20008.0
 LTM              1  19050.0
-HINDUNILVR       5  18043.0
-GODREJPROP       6  17378.0
-BPCL             4  13976.0
-HDFCLIFE         8  13736.0
-CUB              2  13505.0
-TECHM            1  12550.0
+ANGELONE         1  14825.0
+HDFCLIFE         6  14061.0
+KFINTECH         5  13695.0
