@@ -120,7 +120,7 @@ def simulate(day: pd.DataFrame, i: int, side: str, iv: float, lot: int):
     if exit_px is None:  # data khatam (aaj ka din adhoora)
         return None
     qty = lot * C.LOTS_PER_TRADE
-    return {"entry_time": t_entry, "exit_time": t_exit, "side": side, "strike": k, "expiry": expiry,
+    return {"sig_time": sig["time"], "entry_time": t_entry, "exit_time": t_exit, "side": side, "strike": k, "expiry": expiry,
             "iv": round(iv, 3), "spot": round(sig["close"], 2), "entry": round(entry, 2), "exit": round(exit_px, 2),
             "reason": reason, "qty": qty, "cost": round(entry * qty), **X.breakdown(entry, exit_px, qty),
             "vol_x": round(sig["volume"] / sig["vol_avg"], 2), "dte": (expiry - t_entry.date()).days,
@@ -136,31 +136,36 @@ IV = {"MAX_IV": 0.35}
 DTE = {"MIN_DAYS_TO_EXPIRY": 10}
 RPE = {"RSI_PE_MIN": 25}
 G_ = {**E_, **IV, **DTE, **RPE}
+GT = {**G_, "TARGET_PCT": 1.00}                                             # v3 candidate
 # naam ka pehla shabd = column ka naam (mahine wali table)
 VARIANTS = [
-    ("A    purane rules v1", {**R, **OLD}),
-    ("E    LIVE v2", E_),
-    ("E+IV   IV<35% hi", {**E_, **IV}),
-    ("E+DTE  expiry>=10 din", {**E_, **DTE}),
-    ("E+RSI  PUT sirf RSI>=25", {**E_, **RPE}),
-    ("G    E + teeno sudhaar", G_),
-    ("G+T100 target +100%", {**G_, "TARGET_PCT": 1.00}),
-    ("G+SL30 SL -30%", {**G_, "SL_PCT": 0.30}),
-    ("G+NoBE breakeven band", {**G_, "BREAKEVEN_AT": 9.0}),
-    ("G+12   entry 12:00 tak", {**G_, "ENTRY_UPTO": "12:00"}),
-    ("G@0.5% slippage 0.5%", {**G_, "SLIPPAGE_PCT": 0.005}),
-    # --- STRESS TEST: asli duniya backtest se kharab ho to?
-    ("E-LATE live jaisi late entry (1 candle)", {**E_, "BT_ENTRY_DELAY": 1}),
-    ("G-LATE late entry (1 candle)", {**G_, "BT_ENTRY_DELAY": 1}),
-    ("E-IV13 option mehenga (IV x1.3)", {**E_, "BT_IV_MULT": 1.3}),
-    ("E-SLIP2 slippage 2%", {**E_, "SLIPPAGE_PCT": 0.02}),
+    ("A     purane rules v1", {**R, **OLD}),
+    ("E     v2 (abhi live)", E_),
+    ("G     E + IV/expiry/RSI", G_),
+    ("GT    G + target 100% (v3)", GT),
+    # target kitna ho? (plateau check)
+    ("GT75  target 75%", {**GT, "TARGET_PCT": 0.75}),
+    ("GT150 target 150%", {**GT, "TARGET_PCT": 1.50}),
+    ("GTnoT target nahi (3:15 tak)", {**GT, "TARGET_PCT": 9.0}),
+    ("GTnoBE breakeven band", {**GT, "BREAKEVEN_AT": 9.0}),
+    # market breadth: kitne stocks me signal aa chuka
+    ("GTb2  >=2 stocks me signal", {**GT, "BT_BREADTH": 2}),
+    ("GTb3  >=3 stocks me signal", {**GT, "BT_BREADTH": 3}),
+    ("GTb2s >=2 same side signal", {**GT, "BT_BREADTH": 2, "BT_BREADTH_SAME": True}),
+    ("GTb3s >=3 same side signal", {**GT, "BT_BREADTH": 3, "BT_BREADTH_SAME": True}),
+    ("GTm5  max 5 open, 6/din", {**GT, "MAX_OPEN": 5, "MAX_TRADES_PER_DAY": 6}),
+    # STRESS TEST
+    ("GTlate late entry 1 candle", {**GT, "BT_ENTRY_DELAY": 1}),
+    ("GTiv13 option mehenga IV x1.3", {**GT, "BT_IV_MULT": 1.3}),
+    ("GTs2  slippage 2%", {**GT, "SLIPPAGE_PCT": 0.02}),
+    ("GTbad late + IV x1.3 + slip 1.5%", {**GT, "BT_ENTRY_DELAY": 1, "BT_IV_MULT": 1.3, "SLIPPAGE_PCT": 0.015}),
 ]
 # Loss analysis 29 Jun - 23 Oct 2026 ke data pe hua tha. Usse PEHLE ka data = "naya data" (rules banate waqt nahi dekha)
 SPLIT = pd.Timestamp(os.getenv("SPLIT_DATE", "2026-06-29"), tz=IST)
 
 
 def compute(files, nifty, lots):
-    cands = []
+    cands, raw = [], []      # raw = har stock ka din ka pehla signal (filter se pehle) -> market breadth
     for p in files:
         df = read_csv(p)
         if len(df) < 100:
@@ -174,6 +179,7 @@ def compute(files, nifty, lots):
             if len(idx) == 0:
                 continue
             i = idx[0]                              # ek stock me din ka pehla signal hi
+            raw.append((d, day.at[i, "time"], day.at[i, "signal"]))
             tr = simulate(day, i, day.at[i, "signal"], float(ivs.get(d, 0.3)), lot)
             if tr:
                 tr["stock"] = p.stem
@@ -181,6 +187,17 @@ def compute(files, nifty, lots):
     print(f"Signals (trade ban sakte the): {len(cands)}", flush=True)
     if not cands:
         return pd.DataFrame()
+    # BREADTH: trade tabhi jab us din (is signal tak) kam se kam N stocks me signal aa chuka ho
+    nb = int(getattr(C, "BT_BREADTH", 0))
+    if nb > 1:
+        rw = pd.DataFrame(raw, columns=["d", "t", "side"])
+        same = bool(getattr(C, "BT_BREADTH_SAME", False))
+        def ok(c):
+            r = rw[(rw["d"] == c["sig_time"].date()) & (rw["t"] <= c["sig_time"])]
+            if same:
+                r = r[r["side"] == c["side"]]
+            return len(r) >= nb
+        cands = [c for c in cands if ok(c)]
     # portfolio rules: max open + max trades per day, same time pe zyada volume pehle
     cands.sort(key=lambda x: (x["entry_time"], -x["vol_x"]))
     taken, open_ = [], []
@@ -193,6 +210,8 @@ def compute(files, nifty, lots):
         open_.append(t)
         per_day[d] = per_day.get(d, 0) + 1
         taken.append(t)
+    if not taken:
+        return pd.DataFrame()
     return pd.DataFrame(taken).sort_values("entry_time").reset_index(drop=True)
 
 
@@ -205,7 +224,8 @@ def run():
     base = {k: getattr(C, k) for k in ("USE_OR_FAIL_EXIT", "ENTRY_FROM", "SL_PCT", "TARGET_PCT", "BREAKEVEN_AT",
                                        "VOL_MULT", "MAX_COST_PER_TRADE", "SLIPPAGE_PCT", "REAL_CHARGES",
                                        "MAX_IV", "MIN_DAYS_TO_EXPIRY", "RSI_PE_MIN", "ENTRY_UPTO")}
-    base.update(BT_ENTRY_DELAY=0, BT_IV_MULT=IV_MULT)
+    base.update(BT_ENTRY_DELAY=0, BT_IV_MULT=IV_MULT, BT_BREADTH=0, BT_BREADTH_SAME=False,
+                MAX_OPEN=C.MAX_OPEN, MAX_TRADES_PER_DAY=C.MAX_TRADES_PER_DAY)
     results = []
     for name, changes in VARIANTS:
         for k, v in {**base, **changes}.items():
@@ -217,7 +237,7 @@ def run():
     if results[0][1].empty:
         print("Koi trade nahi bana - data / rules check karo")
         return
-    live = next((t for n, t in results if "LIVE" in n), results[0][1])
+    live = next((t for n, t in results if "(v3)" in n), results[0][1])
     best = max(results, key=lambda r: r[1]["pnl"].sum() if len(r[1]) else -1e18)
     if best[1] is not live and len(best[1]):
         OUT.mkdir(parents=True, exist_ok=True)
@@ -313,7 +333,7 @@ def report(tr: pd.DataFrame, n_stocks: int, nifty: pd.DataFrame, results=()):
         "Mahine ke hisaab se P&L (Rs):",
         pd.DataFrame({n.split()[0]: t.groupby(t["entry_time"].dt.strftime("%Y-%m"))["pnl"].sum()
                       for n, t in results if len(t)}).fillna(0).round(0).to_string(),
-        "", "Neeche ki detail + LOSS ANALYSIS: LIVE version (E)", "",
+        "", "Neeche ki detail + LOSS ANALYSIS: version GT (v3)", "",
         "KUL:      " + stats(tr),
         "1st half: " + stats(tr[tr["entry_time"] < half]),
         "2nd half: " + stats(tr[tr["entry_time"] >= half]),
