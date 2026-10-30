@@ -1,7 +1,12 @@
 # Last run
 
-- time: 2026-10-30 12:47
+- scanned: 64
+- start_at: 88
+- scan_cut: True
+- scan_secs: 547
+- signals: ['BAJFINANCE CE']
+- time: 2026-10-30 13:02
 - fno: 218
-- open: 3
-- trades_today: 3
-- angel: {'calls': 13, 'empty': 1, 'rate_limit': 8, 'errors': 8, 'secs': 53.126140832901, 'last_msg': "Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'"}
+- open: 2
+- trades_today: 4
+- angel: {'calls': 141, 'empty': 18, 'rate_limit': 87, 'errors': 87, 'secs': 600.9067223072052, 'last_msg': "Couldn't parse the JSON response received from the server: b'Access denied because of exceeding access rate'"}
