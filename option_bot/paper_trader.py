@@ -45,7 +45,7 @@ POS_F, TRADES_F, SIG_F = STATE / "positions.json", STATE / "trades.csv", STATE /
 META_F, STATUS_F = STATE / "meta.json", STATE / "STATUS.md"
 
 TRADE_COLS = ["date", "stock", "side", "option", "expiry", "strike", "lot", "qty", "entry_time", "entry",
-              "exit_time", "exit", "reason", "pnl", "spot_entry"]
+              "exit_time", "exit", "reason", "gross", "slippage", "charges", "pnl", "spot_entry"]
 SIG_COLS = ["time", "stock", "side", "spot", "vol_x", "action", "note"]
 
 
@@ -88,13 +88,16 @@ def completed(df: pd.DataFrame, now: datetime, minutes: int) -> pd.DataFrame:
 # ---------------------------------------------------------------- exits
 def close_position(pos, price, reason, now, trades_today):
     qty = pos["qty"]
-    p = X.pnl(pos["entry"], price, qty)
-    row = {**pos, "exit_time": now.strftime("%Y-%m-%d %H:%M"), "exit": round(price, 2), "reason": reason, "pnl": p}
+    b = X.breakdown(pos["entry"], price, qty)
+    p = b["pnl"]
+    row = {**pos, **b, "exit_time": now.strftime("%Y-%m-%d %H:%M"), "exit": round(price, 2), "reason": reason}
     append_csv(TRADES_F, TRADE_COLS, row)
     emoji = {"TARGET": "✅", "SL": "🛑", "BREAKEVEN": "⚪", "OR_FAIL": "↩️", "TIME": "⏰"}.get(reason, "•")
     send(f"{emoji} <b>PAPER EXIT</b> {pos['option']}\n"
          f"{pos['stock']} {pos['side']} | Entry {pos['entry']} → Exit {round(price, 2)}\n"
-         f"Reason: {reason} | P&L: <b>{inr(p)}</b> ({qty} qty)")
+         f"Reason: {reason} ({qty} qty)\n"
+         f"Gross {inr(b['gross'])} | Kharcha -Rs {b['slippage'] + b['charges']:,.0f}\n"
+         f"Net P&L: <b>{inr(p)}</b>")
     trades_today.append(p)
     print(f"EXIT {pos['option']} {reason} {pos['entry']}->{price:.2f} pnl {p}", flush=True)
 
@@ -271,12 +274,23 @@ def write_status(positions, now):
         t = pd.read_csv(TRADES_F)
         if len(t):
             wins = (t["pnl"] > 0).mean() * 100
-            lines += ["", "## Ab tak ka result (sab paper trades)",
-                      f"Trades {len(t)} | Win {wins:.0f}% | Kul P&L {inr(t['pnl'].sum())} | "
-                      f"Avg {inr(t['pnl'].mean())}", "",
-                      "| Date | Option | Reason | Entry | Exit | P&L |\n|---|---|---|---|---|---|"]
+            g, sl, ch, net = (t[c].sum() for c in ("gross", "slippage", "charges", "pnl"))
+            lines += ["", "## Ab tak ka result (v2 / version E, 2 Nov 2026 se)",
+                      f"Trades {len(t)} | Win {wins:.0f}% | Avg net {inr(t['pnl'].mean())}", "",
+                      "| | Rs |\n|---|---|",
+                      f"| Gross P&L (bina kharche) | {inr(g)} |",
+                      f"| Slippage | -Rs {sl:,.0f} |",
+                      f"| Charges (brokerage+STT+GST..) | -Rs {ch:,.0f} |",
+                      f"| **Net P&L** | **{inr(net)}** |", ""]
+            d = t.groupby("date")[["gross", "pnl"]].sum()
+            lines += ["## Din ke hisaab se", "| Date | Trades | Gross | Net |\n|---|---|---|---|"]
+            for dt, r in d.iloc[::-1].iterrows():
+                lines.append(f"| {dt} | {(t['date'] == dt).sum()} | {r['gross']:,.0f} | {r['pnl']:,.0f} |")
+            lines += ["", "## Aakhri 15 trades",
+                      "| Date | Option | Reason | Entry | Exit | Gross | Net |\n|---|---|---|---|---|---|---|"]
             for _, r in t.tail(15).iloc[::-1].iterrows():
-                lines.append(f"| {r['date']} | {r['option']} | {r['reason']} | {r['entry']} | {r['exit']} | {r['pnl']:.0f} |")
+                lines.append(f"| {r['date']} | {r['option']} | {r['reason']} | {r['entry']} | {r['exit']} "
+                             f"| {r['gross']:.0f} | {r['pnl']:.0f} |")
     STATUS_F.write_text("\n".join(lines) + "\n")
 
 
@@ -318,7 +332,9 @@ def main():
         t = t[t["date"] == meta["date"]]
         if len(t):
             send(f"📊 <b>Aaj ka paper result</b> ({meta['date']})\nTrades {len(t)} | "
-                 f"Win {(t['pnl'] > 0).sum()} | Loss {(t['pnl'] <= 0).sum()}\nP&L: <b>{inr(t['pnl'].sum())}</b>")
+                 f"Win {(t['pnl'] > 0).sum()} | Loss {(t['pnl'] <= 0).sum()}\n"
+                 f"Gross: {inr(t['gross'].sum())} | Kharcha: -Rs {(t['slippage'] + t['charges']).sum():,.0f}\n"
+                 f"Net P&L: <b>{inr(t['pnl'].sum())}</b>")
         else:
             send(f"📊 Aaj ({meta['date']}) koi option signal nahi aaya.")
         meta["summary_sent"] = True

@@ -1,12 +1,1 @@
-{
- "date": "2026-10-30",
- "trades": 4,
- "stocks_today": [
-  "PGEL",
-  "ALKEM",
-  "VEDL",
-  "BAJFINANCE"
- ],
- "summary_sent": true,
- "scan_offset": 152
-}
+{"date": "2026-10-30", "trades": 0, "stocks_today": [], "summary_sent": true, "scan_offset": 0}

@@ -41,3 +41,13 @@ def pnl(entry: float, exit_price: float, qty: int) -> float:
     buy = entry * (1 + C.SLIPPAGE_PCT)
     sell = exit_price * (1 - C.SLIPPAGE_PCT)
     return round((sell - buy) * qty - charges(buy * qty, sell * qty), 2)
+
+
+def breakdown(entry: float, exit_price: float, qty: int) -> dict:
+    """Gross (bina kharche) / slippage / charges / net - sab Rs me."""
+    gross = (exit_price - entry) * qty
+    buy, sell = entry * (1 + C.SLIPPAGE_PCT), exit_price * (1 - C.SLIPPAGE_PCT)
+    slip = gross - (sell - buy) * qty
+    ch = charges(buy * qty, sell * qty)
+    return {"gross": round(gross, 2), "slippage": round(slip, 2), "charges": round(ch, 2),
+            "pnl": round(gross - slip - ch, 2)}
