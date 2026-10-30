@@ -1,33 +1,33 @@
-RUN {'prefilter': 'fail -> sab stocks', 'nifty_mood': 'UP', 'scanned': 3, 'start_at': 0, 'scan_secs': 0, 'signals': [], 'time': '2026-10-12 13:32', 'fno': 3, 'open': 2, 'trades_today': 2, 'angel': {'calls': 0, 'empty': 0, 'rate_limit': 0, 'errors': 0, 'secs': 0.0, 'last_msg': ''}}
+RUN {'prefilter': 'fail -> sab stocks', 'nifty_mood': 'UP', 'scanned': 0, 'start_at': 0, 'scan_secs': 0, 'signals': ['AAA CE', 'CCC CE'], 'time': '2026-10-12 13:32', 'fno': 3, 'open': 2, 'trades_today': 2, 'angel': {'calls': 0, 'empty': 0, 'rate_limit': 0, 'errors': 0, 'secs': 0.0, 'last_msg': ''}, 'nifty_daily_up': False}
 done
 2026-10-12 13:47 | F&O stocks 3 | open 2
-RUN {'prefilter': 'fail -> sab stocks', 'nifty_mood': 'UP', 'scanned': 3, 'start_at': 0, 'scan_secs': 0, 'signals': [], 'time': '2026-10-12 13:47', 'fno': 3, 'open': 2, 'trades_today': 2, 'angel': {'calls': 0, 'empty': 0, 'rate_limit': 0, 'errors': 0, 'secs': 0.0, 'last_msg': ''}}
+RUN {'prefilter': 'fail -> sab stocks', 'nifty_mood': 'UP', 'scanned': 0, 'start_at': 0, 'scan_secs': 0, 'signals': ['AAA CE', 'CCC CE'], 'time': '2026-10-12 13:47', 'fno': 3, 'open': 2, 'trades_today': 2, 'angel': {'calls': 0, 'empty': 0, 'rate_limit': 0, 'errors': 0, 'secs': 0.0, 'last_msg': ''}, 'nifty_daily_up': False}
 done
 2026-10-12 14:02 | F&O stocks 3 | open 2
-RUN {'prefilter': 'fail -> sab stocks', 'nifty_mood': 'UP', 'scanned': 3, 'start_at': 0, 'scan_secs': 0, 'signals': [], 'time': '2026-10-12 14:02', 'fno': 3, 'open': 2, 'trades_today': 2, 'angel': {'calls': 0, 'empty': 0, 'rate_limit': 0, 'errors': 0, 'secs': 0.0, 'last_msg': ''}}
+RUN {'prefilter': 'fail -> sab stocks', 'nifty_mood': 'UP', 'scanned': 0, 'start_at': 0, 'scan_secs': 0, 'signals': ['AAA CE', 'CCC CE'], 'time': '2026-10-12 14:02', 'fno': 3, 'open': 2, 'trades_today': 2, 'angel': {'calls': 0, 'empty': 0, 'rate_limit': 0, 'errors': 0, 'secs': 0.0, 'last_msg': ''}, 'nifty_daily_up': False}
 done
 2026-10-12 14:17 | F&O stocks 3 | open 2
-RUN {'prefilter': 'fail -> sab stocks', 'nifty_mood': 'UP', 'scanned': 3, 'start_at': 0, 'scan_secs': 0, 'signals': [], 'time': '2026-10-12 14:17', 'fno': 3, 'open': 2, 'trades_today': 2, 'angel': {'calls': 0, 'empty': 0, 'rate_limit': 0, 'errors': 0, 'secs': 0.0, 'last_msg': ''}}
+RUN {'prefilter': 'fail -> sab stocks', 'nifty_mood': 'UP', 'scanned': 0, 'start_at': 0, 'scan_secs': 0, 'signals': ['AAA CE', 'CCC CE'], 'time': '2026-10-12 14:17', 'fno': 3, 'open': 2, 'trades_today': 2, 'angel': {'calls': 0, 'empty': 0, 'rate_limit': 0, 'errors': 0, 'secs': 0.0, 'last_msg': ''}, 'nifty_daily_up': False}
 done
 2026-10-12 14:32 | F&O stocks 3 | open 2
   [TG] ✅ <b>PAPER EXIT</b> AAA27OCT261150CE | AAA CE | Entry 19.47 → Exit 38.95 | Reason: TARGET (250 qty) | Gross +Rs 4,870 | Kharcha -Rs 214 | Net P&L: <b>+Rs 4,656</b>
 EXIT AAA27OCT261150CE TARGET 19.47->38.95 pnl 4656.02
-RUN {'prefilter': 'fail -> sab stocks', 'nifty_mood': 'UP', 'scanned': 3, 'start_at': 0, 'scan_secs': 0, 'signals': [], 'time': '2026-10-12 14:32', 'fno': 3, 'open': 1, 'trades_today': 2, 'angel': {'calls': 0, 'empty': 0, 'rate_limit': 0, 'errors': 0, 'secs': 0.0, 'last_msg': ''}}
+RUN {'prefilter': 'fail -> sab stocks', 'nifty_mood': 'UP', 'scanned': 0, 'start_at': 0, 'scan_secs': 0, 'signals': ['AAA CE', 'CCC CE'], 'time': '2026-10-12 14:32', 'fno': 3, 'open': 1, 'trades_today': 2, 'angel': {'calls': 0, 'empty': 0, 'rate_limit': 0, 'errors': 0, 'secs': 0.0, 'last_msg': ''}, 'nifty_daily_up': False}
 done
 2026-10-12 14:47 | F&O stocks 3 | open 1
   [TG] ✅ <b>PAPER EXIT</b> CCC27OCT262000CE | CCC CE | Entry 44.57 → Exit 89.15 | Reason: TARGET (150 qty) | Gross +Rs 6,687 | Kharcha -Rs 276 | Net P&L: <b>+Rs 6,411</b>
 EXIT CCC27OCT262000CE TARGET 44.57->89.15 pnl 6410.75
-RUN {'prefilter': 'fail -> sab stocks', 'nifty_mood': 'UP', 'scanned': 3, 'start_at': 0, 'scan_secs': 0, 'signals': [], 'time': '2026-10-12 14:47', 'fno': 3, 'open': 0, 'trades_today': 2, 'angel': {'calls': 0, 'empty': 0, 'rate_limit': 0, 'errors': 0, 'secs': 0.0, 'last_msg': ''}}
+RUN {'prefilter': 'fail -> sab stocks', 'nifty_mood': 'UP', 'scanned': 0, 'start_at': 0, 'scan_secs': 0, 'signals': ['AAA CE', 'CCC CE'], 'time': '2026-10-12 14:47', 'fno': 3, 'open': 0, 'trades_today': 2, 'angel': {'calls': 0, 'empty': 0, 'rate_limit': 0, 'errors': 0, 'secs': 0.0, 'last_msg': ''}, 'nifty_daily_up': False}
 done
 2026-10-12 15:02 | F&O stocks 3 | open 0
-RUN {'prefilter': 'fail -> sab stocks', 'nifty_mood': 'UP', 'scanned': 3, 'start_at': 0, 'scan_secs': 0, 'signals': [], 'time': '2026-10-12 15:02', 'fno': 3, 'open': 0, 'trades_today': 2, 'angel': {'calls': 0, 'empty': 0, 'rate_limit': 0, 'errors': 0, 'secs': 0.0, 'last_msg': ''}}
+RUN {'prefilter': 'fail -> sab stocks', 'nifty_mood': 'UP', 'scanned': 0, 'start_at': 0, 'scan_secs': 0, 'signals': ['AAA CE', 'CCC CE'], 'time': '2026-10-12 15:02', 'fno': 3, 'open': 0, 'trades_today': 2, 'angel': {'calls': 0, 'empty': 0, 'rate_limit': 0, 'errors': 0, 'secs': 0.0, 'last_msg': ''}, 'nifty_daily_up': False}
 done
 2026-10-12 15:17 | F&O stocks 3 | open 0
   [TG] 📊 <b>Aaj ka paper result</b> (2026-10-12) | Trades 2 | Win 2 | Loss 0 | Gross: +Rs 11,557 | Kharcha: -Rs 490 | Net P&L: <b>+Rs 11,067</b>
-RUN {'prefilter': 'fail -> sab stocks', 'nifty_mood': 'UP', 'scanned': 3, 'start_at': 0, 'scan_secs': 0, 'signals': [], 'time': '2026-10-12 15:17', 'fno': 3, 'open': 0, 'trades_today': 2, 'angel': {'calls': 0, 'empty': 0, 'rate_limit': 0, 'errors': 0, 'secs': 0.0, 'last_msg': ''}}
+RUN {'prefilter': 'fail -> sab stocks', 'nifty_mood': 'UP', 'scanned': 0, 'start_at': 0, 'scan_secs': 0, 'signals': ['AAA CE', 'CCC CE'], 'time': '2026-10-12 15:17', 'fno': 3, 'open': 0, 'trades_today': 2, 'angel': {'calls': 0, 'empty': 0, 'rate_limit': 0, 'errors': 0, 'secs': 0.0, 'last_msg': ''}, 'nifty_daily_up': False}
 done
 2026-10-12 15:32 | F&O stocks 3 | open 0
-RUN {'prefilter': 'fail -> sab stocks', 'nifty_mood': 'UP', 'scanned': 3, 'start_at': 0, 'scan_secs': 0, 'signals': [], 'time': '2026-10-12 15:32', 'fno': 3, 'open': 0, 'trades_today': 2, 'angel': {'calls': 0, 'empty': 0, 'rate_limit': 0, 'errors': 0, 'secs': 0.0, 'last_msg': ''}}
+RUN {'prefilter': 'fail -> sab stocks', 'nifty_mood': 'UP', 'scanned': 0, 'start_at': 0, 'scan_secs': 0, 'signals': ['AAA CE', 'CCC CE'], 'time': '2026-10-12 15:32', 'fno': 3, 'open': 0, 'trades_today': 2, 'angel': {'calls': 0, 'empty': 0, 'rate_limit': 0, 'errors': 0, 'secs': 0.0, 'last_msg': ''}, 'nifty_daily_up': False}
 done
 # Option Paper Trader - status (12 Oct 2026 15:32 IST)
 
