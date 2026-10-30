@@ -1,5 +1,5 @@
 """
-STRATEGY RULES (v2 = backtest version "E") - sab settings yahan hain
+STRATEGY RULES (v3 = backtest version "V3", 31 Oct 2026 se) - sab settings yahan hain
 =============================================
 Naam : F&O Stock Momentum Breakout - Option BUYING (CE / PE)
 Mode : Telegram alert + Paper trading (koi asli order NAHI lagta)
@@ -10,8 +10,7 @@ Simple bhasha me:
      + VWAP ke upar + EMA9 > EMA21 + volume 2x se zyada + Nifty bhi upar
      -> us stock ka ATM CALL (CE) kharido
   3. Ulta (OR low ke NEECHE, sab cheez neeche)  -> ATM PUT (PE) kharido
-  4. Exit: premium -25% = Stop Loss | premium +50% = Target
-           premium +25% ho gaya -> SL entry pe (no-loss)
+  4. Exit: premium -25% = Stop Loss | premium +100% = Target   (v3: breakeven move band)
            (v2: "stock wapas OR ke andar -> exit" HATA diya - backtest me sabse bada nuksaan isi se)
            3:15 PM -> sab band
 """
@@ -36,14 +35,14 @@ VOL_LOOKBACK = 20
 MIN_BODY_PCT = 0.5          # candle body >= 50% of range (majboot candle)
 RSI_LEN = 14
 RSI_CE_MIN, RSI_CE_MAX = 55, 80
-RSI_PE_MIN, RSI_PE_MAX = 20, 45
+RSI_PE_MIN, RSI_PE_MAX = 25, 45   # v3: PE min 25 (pehle 20)
 USE_NIFTY_FILTER = True     # CE sirf jab Nifty upar, PE sirf jab Nifty neeche
 SIGNAL_LOOKBACK_CANDLES = 2 # GitHub run late ho to pichhli 2 candle tak ka fresh breakout maan lo
 
 # ---------------- option choose ----------------
 STRIKE_MODE = "ATM"         # "ATM" ya "ITM1" (1 strike in-the-money)
-MIN_DAYS_TO_EXPIRY = 5      # expiry 5 din se kam -> agle mahine ka contract
-MAX_IV = 9.9                # stock ki volatility (IV andaaza) isse zyada -> skip  (9.9 = band)
+MIN_DAYS_TO_EXPIRY = 10     # v3 (pehle 5): expiry 10 din se kam -> agle mahine ka contract
+MAX_IV = 0.35               # v3: stock ki volatility andaaza (20 din vol x 1.1) 35% se zyada -> skip
 MIN_PREMIUM = 5.0           # isse sasta option skip (illiquid)
 MIN_OPTION_VOL_LOTS = 20    # aaj ka option volume kam se kam 20 lot (Angel volume lots me deta hai)
 
@@ -54,8 +53,8 @@ MAX_OPEN = 3                # ek time pe max 3 position
 MAX_TRADES_PER_DAY = 4
 
 SL_PCT = 0.25               # premium 25% gira -> exit
-TARGET_PCT = 0.50           # premium 50% badha -> exit
-BREAKEVEN_AT = 0.25         # premium +25% -> SL ko entry pe le aao
+TARGET_PCT = 1.00           # v3 (pehle 0.50): premium 100% badha -> exit
+BREAKEVEN_AT = 9.0          # v3: band (pehle 0.25 = +25% pe SL entry pe)
 USE_OR_FAIL_EXIT = False   # v2 (pehle True) stock wapas range ke andar 15-min close -> exit
 REAL_CHARGES = True        # True = Angel ke asli charges (Rs 20/order + STT 0.15% + exch + GST)
 COST_PER_TRADE = 60.0       # brokerage + charges (round trip, approx Rs)
@@ -63,3 +62,5 @@ SLIPPAGE_PCT = 0.01         # 1% premium slippage (paper me realistic rehne ke l
 
 NIFTY_TOKEN = "99926000"
 SCRIP_MASTER_URL = "https://margincalculator.angelone.in/OpenAPI_File/files/OpenAPIScripMaster.json"
+IV_MULT = 1.1               # IV andaaza = 20 din ki daily volatility x 1.1 (backtest jaisa)
+PREFILTER = True            # batch quote se pehle chhaato -> Angel calls kam (rate-limit)

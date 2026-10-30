@@ -57,13 +57,41 @@ def download():
     end = datetime.now(IST).replace(second=0, microsecond=0)
     start = end - timedelta(days=DAYS)
     print(f"DOWNLOAD {len(uni)} F&O stocks + Nifty | {DAYS} din", flush=True)
-    A.candles_long(C.NIFTY_TOKEN, "NSE", "FIFTEEN_MINUTE", start, end).to_csv(DATA / "NIFTY.csv", index=False)
+    import time as _t
+    nf = A.candles_long(C.NIFTY_TOKEN, "NSE", "FIFTEEN_MINUTE", start, end)
+    nf.to_csv(DATA / "NIFTY.csv", index=False)
+    full = len(nf)
+
+    def get(u, tries):
+        best = pd.DataFrame()
+        for k in range(tries):
+            df = A.candles_long(u["token"], "NSE", "FIFTEEN_MINUTE", start, end)
+            if len(df) > len(best):
+                best = df
+            if len(best) >= 0.9 * full:          # data poora aaya
+                break
+            _t.sleep(15 * (k + 1))               # Angel rate-limit -> ruko, dobara
+        return best
+
+    short = []
     for i, u in uni.iterrows():
-        df = A.candles_long(u["token"], "NSE", "FIFTEEN_MINUTE", start, end)
+        df = get(u, 2)
         if len(df):
             df.to_csv(DATA / f"{u['name']}.csv", index=False)
+        if len(df) < 0.9 * full:
+            short.append(u)
         if i % 25 == 0:
-            print(f"  {i}/{len(uni)}", flush=True)
+            print(f"  {i}/{len(uni)} | adhoore {len(short)} | {A.STATS}", flush=True)
+    if short:                                    # aakhri me adhoore stocks ek baar aur (1 min ruk ke)
+        print(f"ADHOORA DATA {len(short)} stocks - dobara try", flush=True)
+        _t.sleep(60)
+        for u in short:
+            df = get(u, 2)
+            old = DATA / f"{u['name']}.csv"
+            if len(df) and (not old.exists() or len(df) > len(pd.read_csv(old))):
+                df.to_csv(old, index=False)
+    got = sum(1 for p in DATA.glob("*.csv") if p.stem not in ("NIFTY", "_lots"))
+    print(f"DOWNLOAD DONE: {got}/{len(uni)} stocks ka data", flush=True)
     pd.DataFrame({"name": lots.index, "lot": lots.values}).to_csv(DATA / "_lots.csv", index=False)
 
 
@@ -95,6 +123,12 @@ def simulate(day: pd.DataFrame, i: int, side: str, iv: float, lot: int):
 
     if iv > getattr(C, "MAX_IV", 9.9):
         return None
+    if getattr(C, "NO_TRADE_WEEKDAY", -1) == t_entry.weekday():
+        return None
+    if getattr(C, "NO_ROLL", False):                # near-month expiry 10 din se kam -> agle mahine me mat jao, skip
+        near = P.expiry_for(t_entry.date(), 0)
+        if (near - t_entry.date()).days < C.MIN_DAYS_TO_EXPIRY:
+            return None
     entry = prem(entry_spot, t_entry)
     if entry < C.MIN_PREMIUM or entry * lot > C.MAX_COST_PER_TRADE:
         return None
@@ -128,7 +162,8 @@ def simulate(day: pd.DataFrame, i: int, side: str, iv: float, lot: int):
 
 
 # ---------------------------------------------------------------- run
-R = {"REAL_CHARGES": True}
+R = {"REAL_CHARGES": True,           # asli charges + v1/v2 ke purane numbers (config ab v3 hai, isliye yahan pin)
+     "MAX_IV": 9.9, "MIN_DAYS_TO_EXPIRY": 5, "RSI_PE_MIN": 20, "TARGET_PCT": 0.50, "BREAKEVEN_AT": 0.25}
 OLD = {"USE_OR_FAIL_EXIT": True, "VOL_MULT": 1.5, "MAX_COST_PER_TRADE": 30_000}   # v1 rules
 NO_ORF = {"USE_OR_FAIL_EXIT": False}
 E_ = {**R, **NO_ORF, "VOL_MULT": 2.0, "MAX_COST_PER_TRADE": 20_000}             # live v2
@@ -136,29 +171,29 @@ IV = {"MAX_IV": 0.35}
 DTE = {"MIN_DAYS_TO_EXPIRY": 10}
 RPE = {"RSI_PE_MIN": 25}
 G_ = {**E_, **IV, **DTE, **RPE}
-GT = {**G_, "TARGET_PCT": 1.00}                                             # v3 candidate
+GT = {**G_, "TARGET_PCT": 1.00}
+V3 = {**GT, "BREAKEVEN_AT": 9.0}                                             # v3 = live (31 Oct se)
+NT = {"NIFTY_DAILY_TREND": "ce"}
+NR = {"NO_ROLL": True}
+NTU = {"NO_TRADE_WEEKDAY": 1}
+ALL = {**V3, **NT, **NR, **NTU}
 # naam ka pehla shabd = column ka naam (mahine wali table)
 VARIANTS = [
     ("A     purane rules v1", {**R, **OLD}),
-    ("E     v2 (abhi live)", E_),
-    ("G     E + IV/expiry/RSI", G_),
-    ("GT    G + target 100% (v3)", GT),
-    # target kitna ho? (plateau check)
-    ("GT75  target 75%", {**GT, "TARGET_PCT": 0.75}),
-    ("GT150 target 150%", {**GT, "TARGET_PCT": 1.50}),
-    ("GTnoT target nahi (3:15 tak)", {**GT, "TARGET_PCT": 9.0}),
-    ("GTnoBE breakeven band", {**GT, "BREAKEVEN_AT": 9.0}),
-    # market breadth: kitne stocks me signal aa chuka
-    ("GTb2  >=2 stocks me signal", {**GT, "BT_BREADTH": 2}),
-    ("GTb3  >=3 stocks me signal", {**GT, "BT_BREADTH": 3}),
-    ("GTb2s >=2 same side signal", {**GT, "BT_BREADTH": 2, "BT_BREADTH_SAME": True}),
-    ("GTb3s >=3 same side signal", {**GT, "BT_BREADTH": 3, "BT_BREADTH_SAME": True}),
-    ("GTm5  max 5 open, 6/din", {**GT, "MAX_OPEN": 5, "MAX_TRADES_PER_DAY": 6}),
-    # STRESS TEST
-    ("GTlate late entry 1 candle", {**GT, "BT_ENTRY_DELAY": 1}),
-    ("GTiv13 option mehenga IV x1.3", {**GT, "BT_IV_MULT": 1.3}),
-    ("GTs2  slippage 2%", {**GT, "SLIPPAGE_PCT": 0.02}),
-    ("GTbad late + IV x1.3 + slip 1.5%", {**GT, "BT_ENTRY_DELAY": 1, "BT_IV_MULT": 1.3, "SLIPPAGE_PCT": 0.015}),
+    ("E     v2", E_),
+    ("GT    G + target 100%", GT),
+    ("V3    GT + breakeven band (v3)", V3),
+    ("V3nt  CALL sirf Nifty daily trend upar", {**V3, **NT}),
+    ("V3nt2 CALL upar / PUT neeche trend", {**V3, "NIFTY_DAILY_TREND": "both"}),
+    ("V3nr  mahine ke aakhri din skip", {**V3, **NR}),
+    ("V3tue Tuesday skip", {**V3, **NTU}),
+    ("V3all teeno", ALL),
+    ("V3ntnr trend + aakhri din", {**V3, **NT, **NR}),
+    # STRESS
+    ("V3s2  slippage 2%", {**V3, "SLIPPAGE_PCT": 0.02}),
+    ("V3bad late + IV x1.3 + slip 1.5%", {**V3, "BT_ENTRY_DELAY": 1, "BT_IV_MULT": 1.3, "SLIPPAGE_PCT": 0.015}),
+    ("ALLs2 teeno @ slippage 2%", {**ALL, "SLIPPAGE_PCT": 0.02}),
+    ("ALLbad teeno @ late+IV1.3+slip1.5%", {**ALL, "BT_ENTRY_DELAY": 1, "BT_IV_MULT": 1.3, "SLIPPAGE_PCT": 0.015}),
 ]
 # Loss analysis 29 Jun - 23 Oct 2026 ke data pe hua tha. Usse PEHLE ka data = "naya data" (rules banate waqt nahi dekha)
 SPLIT = pd.Timestamp(os.getenv("SPLIT_DATE", "2026-06-29"), tz=IST)
@@ -187,6 +222,17 @@ def compute(files, nifty, lots):
     print(f"Signals (trade ban sakte the): {len(cands)}", flush=True)
     if not cands:
         return pd.DataFrame()
+    # NIFTY DAILY TREND: kal ka Nifty close > 20 din ka average -> "upar"
+    nt = getattr(C, "NIFTY_DAILY_TREND", "")
+    if nt:
+        dc = nifty.assign(d=nifty["time"].dt.date).groupby("d")["close"].last()
+        up = (dc > dc.rolling(20).mean()).shift(1).fillna(True).to_dict()
+        def trend_ok(c):
+            u = bool(up.get(c["entry_time"].date(), True))
+            if c["side"] == "CE":
+                return u
+            return (not u) if nt == "both" else True
+        cands = [c for c in cands if trend_ok(c)]
     # BREADTH: trade tabhi jab us din (is signal tak) kam se kam N stocks me signal aa chuka ho
     nb = int(getattr(C, "BT_BREADTH", 0))
     if nb > 1:
@@ -225,7 +271,8 @@ def run():
                                        "VOL_MULT", "MAX_COST_PER_TRADE", "SLIPPAGE_PCT", "REAL_CHARGES",
                                        "MAX_IV", "MIN_DAYS_TO_EXPIRY", "RSI_PE_MIN", "ENTRY_UPTO")}
     base.update(BT_ENTRY_DELAY=0, BT_IV_MULT=IV_MULT, BT_BREADTH=0, BT_BREADTH_SAME=False,
-                MAX_OPEN=C.MAX_OPEN, MAX_TRADES_PER_DAY=C.MAX_TRADES_PER_DAY)
+                MAX_OPEN=C.MAX_OPEN, MAX_TRADES_PER_DAY=C.MAX_TRADES_PER_DAY,
+                NIFTY_DAILY_TREND="", NO_ROLL=False, NO_TRADE_WEEKDAY=-1)
     results = []
     for name, changes in VARIANTS:
         for k, v in {**base, **changes}.items():
@@ -333,7 +380,7 @@ def report(tr: pd.DataFrame, n_stocks: int, nifty: pd.DataFrame, results=()):
         "Mahine ke hisaab se P&L (Rs):",
         pd.DataFrame({n.split()[0]: t.groupby(t["entry_time"].dt.strftime("%Y-%m"))["pnl"].sum()
                       for n, t in results if len(t)}).fillna(0).round(0).to_string(),
-        "", "Neeche ki detail + LOSS ANALYSIS: version GT (v3)", "",
+        "", "Neeche ki detail + LOSS ANALYSIS: version V3 (live)", "",
         "KUL:      " + stats(tr),
         "1st half: " + stats(tr[tr["entry_time"] < half]),
         "2nd half: " + stats(tr[tr["entry_time"] >= half]),

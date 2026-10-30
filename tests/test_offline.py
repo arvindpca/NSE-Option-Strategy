@@ -58,6 +58,9 @@ def trading_days(n, end):
 
 def test_exits():
     from option_bot import exits as X
+    from option_bot import config as C
+    saved = (C.BREAKEVEN_AT, C.TARGET_PCT)
+    C.BREAKEVEN_AT, C.TARGET_PCT = 0.25, 0.50          # exit logic ka test purane numbers se
     pos = {"entry": 100, **X.new_levels(100)}
     assert X.step(pos, 100, 110, 95) is None
     assert X.step(pos, 100, 126, 99) is None and pos["sl"] == 100          # breakeven chalu
@@ -65,6 +68,11 @@ def test_exits():
     pos = {"entry": 100, **X.new_levels(100)}
     assert X.step(pos, 100, 151, 74) == ("SL", 75)                         # dono chhue -> SL
     assert X.step({"entry": 100, **X.new_levels(100)}, 100, 152, 90) == ("TARGET", 150)
+    C.BREAKEVEN_AT, C.TARGET_PCT = 9.0, 1.00
+    pos = {"entry": 100, **X.new_levels(100)}
+    assert X.step(pos, 100, 160, 80) is None and pos["sl"] == 75            # v3: breakeven band
+    assert X.step(pos, 150, 201, 140) == ("TARGET", 200)
+    C.BREAKEVEN_AT, C.TARGET_PCT = saved
     print("exits OK")
 
 
@@ -145,8 +153,19 @@ def test_live_paper(tmp, data):
     A.fno_universe = lambda m: pd.DataFrame({"name": ["AAA", "BBB", "CCC"], "token": ["1", "2", "3"]})
     A.candles = fake_candles
     A.ltp = lambda ex, sym, tkn: None   # LTP fail -> candle close fallback test
+    A.quotes = lambda toks, exchange="NSE": None   # batch quote fail -> sab stocks scan (fallback test)
 
     import option_bot.paper_trader as PT
+    from option_bot import config as C
+    C.MAX_IV = 0.99                      # fake data bahut uchhalta hai -> IV filter test ke liye dheela
+    # prefilter test: fake quotes -> sirf upar wale stock CE ke liye bache
+    A.quotes = lambda toks, exchange="NSE": {"1": dict(ltp=110, open=100, high=111, low=99, close=100, volume=1),
+                                             "2": dict(ltp=90, open=100, high=101, low=89, close=100, volume=1)}
+    PT.RUN.clear()
+    u = pd.DataFrame({"name": ["AAA", "BBB", "CCC"], "token": ["1", "2", "3"]})
+    assert list(PT.prefilter(u, {"CE"}, 0.2)["name"]) == ["AAA", "CCC"]      # CCC ka quote nahi -> safe, scan
+    assert list(PT.prefilter(u, {"PE"}, 0.2)["name"]) == ["BBB", "CCC"]
+    A.quotes = lambda toks, exchange="NSE": None   # batch quote fail -> sab stocks scan (fallback)
     sent = []
     PT.send = lambda txt: sent.append(txt) or print("  [TG]", txt.replace("\n", " | "))
     state = Path(tmp) / "state"

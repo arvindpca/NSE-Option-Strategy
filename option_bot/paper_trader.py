@@ -148,6 +148,17 @@ def scan(now, universe, contracts, positions, meta):
     if nifty.empty:
         print("Nifty data nahi mila - scan skip", flush=True)
         return []
+    # Nifty ka mood (pichhli 2 candle): kaunsi side ka signal aa sakta hai?
+    nb = S.nifty_bias(nifty)
+    moods = set(nb["n_bias"].tail(C.SIGNAL_LOOKBACK_CANDLES))
+    sides = {"CE", "PE"} if not C.USE_NIFTY_FILTER else ({"CE"} if "UP" in moods else set()) | ({"PE"} if "DOWN" in moods else set())
+    RUN["nifty_mood"] = ",".join(sorted(moods))
+    if not sides:
+        print(f"Nifty FLAT ({moods}) - koi signal possible nahi, scan skip (Angel calls bache)", flush=True)
+        RUN["scanned"] = 0
+        return []
+    if C.PREFILTER:
+        universe = prefilter(universe, sides, float(nb["n_chg_pct"].iloc[-1]))
     found = []
     t0 = time.time()
     budget = float(os.getenv("SCAN_BUDGET_SEC", "540"))   # 9 min: job 14 min me kabhi na atke
@@ -188,6 +199,43 @@ def scan(now, universe, contracts, positions, meta):
     return found
 
 
+def prefilter(universe, sides, n_chg):
+    """Batch quote (5 calls) se wo stocks chhaato jinme signal ho hi nahi sakta.
+    CE ke liye zaroori: abhi ka daam din ke open se upar + Nifty se zyada strong.  PE ulta.
+    Thodi chhoot (0.3% / 0.5%) rakhi hai kyunki signal 1-2 candle pehle ka ho sakta hai."""
+    q = A.quotes(list(universe["token"]))
+    if not q:
+        RUN["prefilter"] = "fail -> sab stocks"
+        return universe
+
+    def maybe(tok):
+        d = q.get(str(tok))
+        if not d or not d["ltp"] or not d["close"] or not d["open"]:
+            return True                       # data nahi -> scan karo (safe)
+        chg = (d["ltp"] / d["close"] - 1) * 100
+        ce = "CE" in sides and d["ltp"] > d["open"] * 0.997 and chg > n_chg - 0.5
+        pe = "PE" in sides and d["ltp"] < d["open"] * 1.003 and chg < n_chg + 0.5
+        return ce or pe
+    keep = universe[universe["token"].map(maybe)]
+    RUN["prefilter"] = f"{len(keep)}/{len(universe)} stocks"
+    print(f"prefilter: {len(keep)}/{len(universe)} stocks scan honge (sides {sides})", flush=True)
+    return keep
+
+
+def est_iv(token, now):
+    """Backtest jaisa IV andaaza: pichhle 20 din ki daily volatility (annual) x IV_MULT, 18%-90%."""
+    import math
+    df = A.candles(token, "NSE", "ONE_DAY", now - timedelta(days=45), now)
+    if df.empty:
+        return None
+    d = df.assign(d=df["time"].dt.date).groupby("d")["close"].last()
+    d = d[d.index < now.date()]                # aaj ka din shamil nahi
+    r = (d / d.shift(1)).apply(lambda x: math.log(x) if x and x > 0 else float("nan")).dropna().tail(20)
+    if len(r) < 10:
+        return None
+    return min(max(float(r.std()) * math.sqrt(252) * C.IV_MULT, 0.18), 0.90)
+
+
 def try_enter(cand, now, contracts, positions, meta):
     log = {"time": now.strftime("%Y-%m-%d %H:%M"), "stock": cand["stock"], "side": cand["side"],
            "spot": round(cand["spot"], 2), "vol_x": cand["vol_x"]}
@@ -218,6 +266,12 @@ def try_enter(cand, now, contracts, positions, meta):
     con = pick_contract(contracts, cand["stock"], cand["spot"], cand["side"], now.date())
     if con is None:
         return skip("option contract nahi mila")
+    iv = est_iv(cand["token"], now)
+    if iv is None:
+        return retry_later("IV ke liye daily data nahi mila")
+    log["note_iv"] = round(iv, 2)
+    if iv > C.MAX_IV:
+        return skip(f"stock bahut uchhalta hai (IV andaaza {iv:.0%} > {C.MAX_IV:.0%})")
     day_start = now.replace(hour=9, minute=15, second=0, microsecond=0)
     oc = A.candles(con["token"], "NFO", "FIVE_MINUTE", day_start, now)
     if oc.empty:
@@ -255,7 +309,7 @@ def try_enter(cand, now, contracts, positions, meta):
          f"Stock: {cand['stock']} @ {cand['spot']:.2f} | Vol {cand['vol_x']}x\n"
          f"Premium: <b>{price:.2f}</b> | Lot {con['lot']} | Cost Rs {cost:,.0f}\n"
          f"SL {lv['sl']} (-{int(C.SL_PCT*100)}%) | Target {lv['target']} (+{int(C.TARGET_PCT*100)}%)\n"
-         f"Exit 3:15 PM tak" + (" | Breakout fail = exit" if C.USE_OR_FAIL_EXIT else ""))
+         f"IV andaaza {iv:.0%} | Exit 3:15 PM tak" + (" | Breakout fail = exit" if C.USE_OR_FAIL_EXIT else ""))
     print(f"ENTRY {con['symbol']} @ {price}", flush=True)
     return pos
 
@@ -275,7 +329,7 @@ def write_status(positions, now):
         if len(t):
             wins = (t["pnl"] > 0).mean() * 100
             g, sl, ch, net = (t[c].sum() for c in ("gross", "slippage", "charges", "pnl"))
-            lines += ["", "## Ab tak ka result (v2 / version E, 2 Nov 2026 se)",
+            lines += ["", "## Ab tak ka result (v3, 2 Nov 2026 se)",
                       f"Trades {len(t)} | Win {wins:.0f}% | Avg net {inr(t['pnl'].mean())}", "",
                       "| | Rs |\n|---|---|",
                       f"| Gross P&L (bina kharche) | {inr(g)} |",

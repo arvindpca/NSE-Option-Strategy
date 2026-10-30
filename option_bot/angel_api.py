@@ -116,6 +116,35 @@ def candles_long(token, exchange, interval, start, end, chunk_days=55):
     return pd.concat(parts).drop_duplicates("time").sort_values("time").reset_index(drop=True)
 
 
+def quotes(tokens, exchange="NSE"):
+    """Batch quote (50 token ek call me): {token: {ltp, open, high, low, close(=kal ka), volume}}. Fail -> None."""
+    out = {}
+    try:
+        for i in range(0, len(tokens), 50):
+            part = [str(t) for t in tokens[i:i + 50]]
+            r = None
+            for attempt in range(3):
+                STATS["calls"] += 1
+                try:
+                    r = client().getMarketData("FULL", {exchange: part})
+                except Exception as e:  # noqa: BLE001
+                    r = {"message": str(e)}
+                if r and r.get("status"):
+                    break
+                STATS["rate_limit"] += 1
+                time.sleep(2 * (attempt + 1))
+            if not (r and r.get("status")):
+                return None
+            for q in (r.get("data") or {}).get("fetched", []):
+                out[str(q.get("symbolToken"))] = {k: float(q.get(k) or 0) for k in ("ltp", "open", "high", "low", "close")} | \
+                    {"volume": float(q.get("tradeVolume") or 0)}
+            time.sleep(1.1)
+    except Exception as e:  # noqa: BLE001
+        print(f"[angel] quotes fail: {e}", flush=True)
+        return None
+    return out
+
+
 def ltp(exchange: str, symbol: str, token: str) -> float | None:
     try:
         r = client().ltpData(exchange, symbol, str(token))
