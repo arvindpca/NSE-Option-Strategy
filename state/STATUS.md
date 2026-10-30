@@ -1,10 +1,11 @@
-# Option Paper Trader - status (30 Oct 2026 11:47 IST)
+# Option Paper Trader - status (30 Oct 2026 12:02 IST)
 
-## Khuli positions (2)
+## Khuli positions (3)
 | Option | Side | Entry | SL | Target | Time |
 |---|---|---|---|---|---|
 | PGEL23NOV26540CE | CE | 18.55 | 13.91 | 27.83 | 10:02 |
 | ALKEM23NOV265100CE | CE | 171.0 | 128.25 | 256.5 | 11:32 |
+| VEDL23NOV26240CE | CE | 6.55 | 4.91 | 9.82 | 12:02 |
 
 ## Ab tak ka result (sab paper trades)
 Trades 4 | Win 75% | Kul P&L +Rs 18,582 | Avg +Rs 4,646
