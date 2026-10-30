@@ -163,7 +163,8 @@ def simulate(day: pd.DataFrame, i: int, side: str, iv: float, lot: int):
 
 # ---------------------------------------------------------------- run
 R = {"REAL_CHARGES": True,           # asli charges + v1/v2 ke purane numbers (config ab v3 hai, isliye yahan pin)
-     "MAX_IV": 9.9, "MIN_DAYS_TO_EXPIRY": 5, "RSI_PE_MIN": 20, "TARGET_PCT": 0.50, "BREAKEVEN_AT": 0.25}
+     "MAX_IV": 9.9, "MIN_DAYS_TO_EXPIRY": 5, "RSI_PE_MIN": 20, "TARGET_PCT": 0.50, "BREAKEVEN_AT": 0.25,
+     "NO_ROLL": False, "NIFTY_DAILY_TREND": "", "NO_TRADE_WEEKDAY": -1}
 OLD = {"USE_OR_FAIL_EXIT": True, "VOL_MULT": 1.5, "MAX_COST_PER_TRADE": 30_000}   # v1 rules
 NO_ORF = {"USE_OR_FAIL_EXIT": False}
 E_ = {**R, **NO_ORF, "VOL_MULT": 2.0, "MAX_COST_PER_TRADE": 20_000}             # live v2
@@ -172,28 +173,34 @@ DTE = {"MIN_DAYS_TO_EXPIRY": 10}
 RPE = {"RSI_PE_MIN": 25}
 G_ = {**E_, **IV, **DTE, **RPE}
 GT = {**G_, "TARGET_PCT": 1.00}
-V3 = {**GT, "BREAKEVEN_AT": 9.0}                                             # v3 = live (31 Oct se)
+V3 = {**GT, "BREAKEVEN_AT": 9.0, "NO_ROLL": False, "NIFTY_DAILY_TREND": ""}  # v3
 NT = {"NIFTY_DAILY_TREND": "ce"}
 NR = {"NO_ROLL": True}
 NTU = {"NO_TRADE_WEEKDAY": 1}
 ALL = {**V3, **NT, **NR, **NTU}
+V31 = {**V3, **NT, **NR}                                                     # v3.1 = LIVE (2 Nov se)
 # naam ka pehla shabd = column ka naam (mahine wali table)
 VARIANTS = [
     ("A     purane rules v1", {**R, **OLD}),
     ("E     v2", E_),
-    ("GT    G + target 100%", GT),
-    ("V3    GT + breakeven band (v3)", V3),
-    ("V3nt  CALL sirf Nifty daily trend upar", {**V3, **NT}),
-    ("V3nt2 CALL upar / PUT neeche trend", {**V3, "NIFTY_DAILY_TREND": "both"}),
-    ("V3nr  mahine ke aakhri din skip", {**V3, **NR}),
-    ("V3tue Tuesday skip", {**V3, **NTU}),
-    ("V3all teeno", ALL),
-    ("V3ntnr trend + aakhri din", {**V3, **NT, **NR}),
-    # STRESS
-    ("V3s2  slippage 2%", {**V3, "SLIPPAGE_PCT": 0.02}),
-    ("V3bad late + IV x1.3 + slip 1.5%", {**V3, "BT_ENTRY_DELAY": 1, "BT_IV_MULT": 1.3, "SLIPPAGE_PCT": 0.015}),
-    ("ALLs2 teeno @ slippage 2%", {**ALL, "SLIPPAGE_PCT": 0.02}),
-    ("ALLbad teeno @ late+IV1.3+slip1.5%", {**ALL, "BT_ENTRY_DELAY": 1, "BT_IV_MULT": 1.3, "SLIPPAGE_PCT": 0.015}),
+    ("V3    v3", V3),
+    ("V3nr  v3 + aakhri din skip", {**V3, **NR}),
+    ("V31   v3 + trend + aakhri din (v3.1 LIVE)", V31),
+    ("V31tue v3.1 + Tuesday skip", ALL),
+    # STRESS v3.1
+    ("V31late late entry", {**V31, "BT_ENTRY_DELAY": 1}),
+    ("V31iv13 option mehenga IV x1.3", {**V31, "BT_IV_MULT": 1.3}),
+    ("V31s2 slippage 2%", {**V31, "SLIPPAGE_PCT": 0.02}),
+    ("V31s3 slippage 3%", {**V31, "SLIPPAGE_PCT": 0.03}),
+    ("V31bad late + IV x1.3 + slip 1.5%", {**V31, "BT_ENTRY_DELAY": 1, "BT_IV_MULT": 1.3, "SLIPPAGE_PCT": 0.015}),
+    # parameter check (plateau) v3.1
+    ("V31t75 target 75%", {**V31, "TARGET_PCT": 0.75}),
+    ("V31t150 target 150%", {**V31, "TARGET_PCT": 1.50}),
+    ("V31sl20 SL 20%", {**V31, "SL_PCT": 0.20}),
+    ("V31sl30 SL 30%", {**V31, "SL_PCT": 0.30}),
+    ("V31iv30 IV<30%", {**V31, "MAX_IV": 0.30}),
+    ("V31iv40 IV<40%", {**V31, "MAX_IV": 0.40}),
+    ("V31v25 volume 2.5x", {**V31, "VOL_MULT": 2.5}),
 ]
 # Loss analysis 29 Jun - 23 Oct 2026 ke data pe hua tha. Usse PEHLE ka data = "naya data" (rules banate waqt nahi dekha)
 SPLIT = pd.Timestamp(os.getenv("SPLIT_DATE", "2026-06-29"), tz=IST)
@@ -270,9 +277,10 @@ def run():
     base = {k: getattr(C, k) for k in ("USE_OR_FAIL_EXIT", "ENTRY_FROM", "SL_PCT", "TARGET_PCT", "BREAKEVEN_AT",
                                        "VOL_MULT", "MAX_COST_PER_TRADE", "SLIPPAGE_PCT", "REAL_CHARGES",
                                        "MAX_IV", "MIN_DAYS_TO_EXPIRY", "RSI_PE_MIN", "ENTRY_UPTO")}
-    base.update(BT_ENTRY_DELAY=0, BT_IV_MULT=IV_MULT, BT_BREADTH=0, BT_BREADTH_SAME=False,
-                MAX_OPEN=C.MAX_OPEN, MAX_TRADES_PER_DAY=C.MAX_TRADES_PER_DAY,
-                NIFTY_DAILY_TREND="", NO_ROLL=False, NO_TRADE_WEEKDAY=-1)
+    for k, v in dict(BT_ENTRY_DELAY=0, BT_IV_MULT=IV_MULT, BT_BREADTH=0, BT_BREADTH_SAME=False,
+                     MAX_OPEN=C.MAX_OPEN, MAX_TRADES_PER_DAY=C.MAX_TRADES_PER_DAY,
+                     NIFTY_DAILY_TREND="", NO_ROLL=False, NO_TRADE_WEEKDAY=-1).items():
+        base[k] = getattr(C, k, v)          # config ki asli value wapas aaye (live settings na bigdein)
     results = []
     for name, changes in VARIANTS:
         for k, v in {**base, **changes}.items():
@@ -284,7 +292,9 @@ def run():
     if results[0][1].empty:
         print("Koi trade nahi bana - data / rules check karo")
         return
-    live = next((t for n, t in results if "(v3)" in n), results[0][1])
+    live = next((t for n, t in results if "LIVE" in n), results[0][1])
+    if live.empty:                                   # (test data me live version ka trade na bane)
+        live = results[0][1]
     best = max(results, key=lambda r: r[1]["pnl"].sum() if len(r[1]) else -1e18)
     if best[1] is not live and len(best[1]):
         OUT.mkdir(parents=True, exist_ok=True)
@@ -380,7 +390,7 @@ def report(tr: pd.DataFrame, n_stocks: int, nifty: pd.DataFrame, results=()):
         "Mahine ke hisaab se P&L (Rs):",
         pd.DataFrame({n.split()[0]: t.groupby(t["entry_time"].dt.strftime("%Y-%m"))["pnl"].sum()
                       for n, t in results if len(t)}).fillna(0).round(0).to_string(),
-        "", "Neeche ki detail + LOSS ANALYSIS: version V3 (live)", "",
+        "", "Neeche ki detail + LOSS ANALYSIS: version V31 (v3.1 LIVE)", "",
         "KUL:      " + stats(tr),
         "1st half: " + stats(tr[tr["entry_time"] < half]),
         "2nd half: " + stats(tr[tr["entry_time"] >= half]),

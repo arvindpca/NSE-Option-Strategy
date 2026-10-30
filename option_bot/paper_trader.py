@@ -136,8 +136,34 @@ def manage_open(positions, now, today_trades_pnl):
 
 
 # ---------------------------------------------------------------- entries
+def nifty_daily_up(now, meta):
+    """Kal ka Nifty close > pichhle 20 din ka average?  Din me ek baar (meta me save)."""
+    if "nifty_up" in meta:
+        return meta["nifty_up"]
+    df = A.candles(C.NIFTY_TOKEN, "NSE", "ONE_DAY", now - timedelta(days=50), now)
+    if df.empty:
+        return None                                 # data nahi -> is run me CALL mat lo, agle run me dobara
+    d = df.assign(d=df["time"].dt.date).groupby("d")["close"].last()
+    d = d[d.index < now.date()].tail(20)
+    if len(d) < 15:
+        return None
+    meta["nifty_up"] = bool(d.iloc[-1] > d.mean())
+    return meta["nifty_up"]
+
+
+def near_expiry_days(contracts, today):
+    e = [x for x in contracts["expiry_d"].unique() if x >= today]
+    return (min(e) - today).days if e else 99
+
+
 def scan(now, universe, contracts, positions, meta):
     today = now.date()
+    if getattr(C, "NO_ROLL", False):
+        dte = near_expiry_days(contracts, today)
+        if dte < C.MIN_DAYS_TO_EXPIRY:
+            print(f"Is mahine ki expiry {dte} din me - v3.1 rule: aaj trade nahi, scan skip", flush=True)
+            RUN["skip"] = f"expiry {dte} din me"
+            return []
     start = now - timedelta(days=5)          # indicators ke warm-up ke liye pichhle din bhi
     nifty = pd.DataFrame()
     for attempt in range(3):            # Nifty na mile to poora scan skip hota tha -> 3 baar try
@@ -153,6 +179,13 @@ def scan(now, universe, contracts, positions, meta):
     moods = set(nb["n_bias"].tail(C.SIGNAL_LOOKBACK_CANDLES))
     sides = {"CE", "PE"} if not C.USE_NIFTY_FILTER else ({"CE"} if "UP" in moods else set()) | ({"PE"} if "DOWN" in moods else set())
     RUN["nifty_mood"] = ",".join(sorted(moods))
+    if "CE" in sides and getattr(C, "NIFTY_DAILY_TREND", ""):
+        up = nifty_daily_up(now, meta)
+        RUN["nifty_daily_up"] = up
+        if not up:                                  # Nifty ka bada trend neeche (ya data nahi) -> CALL nahi
+            sides.discard("CE")
+        if C.NIFTY_DAILY_TREND == "both" and up and "PE" in sides:
+            sides.discard("PE")
     if not sides:
         print(f"Nifty FLAT ({moods}) - koi signal possible nahi, scan skip (Angel calls bache)", flush=True)
         RUN["scanned"] = 0

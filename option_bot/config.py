@@ -64,3 +64,5 @@ NIFTY_TOKEN = "99926000"
 SCRIP_MASTER_URL = "https://margincalculator.angelone.in/OpenAPI_File/files/OpenAPIScripMaster.json"
 IV_MULT = 1.1               # IV andaaza = 20 din ki daily volatility x 1.1 (backtest jaisa)
 PREFILTER = True            # batch quote se pehle chhaato -> Angel calls kam (rate-limit)
+NO_ROLL = True              # v3.1: is mahine ki expiry 10 din se kam -> us din trade NAHI (agle mahine ka option nahi lena)
+NIFTY_DAILY_TREND = "ce"    # v3.1: CALL sirf jab kal ka Nifty close > 20 din ka average ("" = band, "both" = PUT bhi ulta)
