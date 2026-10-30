@@ -113,8 +113,9 @@ def simulate(day: pd.DataFrame, i: int, side: str, iv: float, lot: int):
     qty = lot * C.LOTS_PER_TRADE
     return {"entry_time": t_entry, "exit_time": t_exit, "side": side, "strike": k, "expiry": expiry,
             "iv": round(iv, 3), "spot": round(sig["close"], 2), "entry": round(entry, 2), "exit": round(exit_px, 2),
-            "reason": reason, "qty": qty, "cost": round(entry * qty), "pnl": X.pnl(entry, exit_px, qty),
-            "vol_x": round(sig["volume"] / sig["vol_avg"], 2)}
+            "reason": reason, "qty": qty, "cost": round(entry * qty), **X.breakdown(entry, exit_px, qty),
+            "vol_x": round(sig["volume"] / sig["vol_avg"], 2), "dte": (expiry - t_entry.date()).days,
+            "rsi": round(float(sig.get("rsi", float("nan"))), 1) if "rsi" in sig else None}
 
 
 # ---------------------------------------------------------------- run
@@ -190,7 +191,8 @@ def run():
     if results[0][1].empty:
         print("Koi trade nahi bana - data / rules check karo")
         return
-    report(results[0][1], len(files), nifty, results)
+    live = next((t for n, t in results if "LIVE" in n), results[0][1])
+    report(live, len(files), nifty, results)
 
 
 def stats(t: pd.DataFrame) -> str:
@@ -204,10 +206,47 @@ def stats(t: pd.DataFrame) -> str:
             f"Avg Rs {t['pnl'].mean():,.0f} | PF {pf:.2f} | Max DD Rs {dd:,.0f}")
 
 
+def loss_analysis(tr: pd.DataFrame) -> list:
+    t = tr.copy()
+    t["hold_min"] = (t["exit_time"] - t["entry_time"]).dt.total_seconds() / 60
+    t["day"] = t["entry_time"].dt.day_name().str[:3]
+    cut = lambda col, bins, labels: pd.cut(t[col], bins, labels=labels)  # noqa: E731
+
+    def g(key):
+        return t.groupby(key, observed=True)["pnl"].agg(
+            trades="count", pnl="sum", avg="mean", win_pct=lambda s: (s > 0).mean() * 100).round(0).to_string()
+    out = ["=" * 60, "LOSS ANALYSIS (live version)", "=" * 60]
+    if {"gross", "slippage", "charges"} <= set(t.columns):
+        out += [f"Gross (bina kharche) Rs {t['gross'].sum():,.0f} | Slippage -Rs {t['slippage'].sum():,.0f} | "
+                f"Charges -Rs {t['charges'].sum():,.0f} | NET Rs {t['pnl'].sum():,.0f}",
+                f"Avg kharcha per trade Rs {(t['slippage'] + t['charges']).mean():,.0f}", ""]
+    wins, loss = t[t["pnl"] > 0]["pnl"], t[t["pnl"] <= 0]["pnl"]
+    streak = (t["pnl"] <= 0).astype(int).groupby((t["pnl"] > 0).cumsum()).sum().max()
+    out += [f"Avg jeet Rs {wins.mean():,.0f} | Avg haar Rs {loss.mean():,.0f} | Sabse badi haar Rs {loss.min():,.0f} | "
+            f"Lagatar haar max {streak}", ""]
+    out += ["Exit reason:", g("reason"), "", "Side:", g("side"),
+            "", "Kitni der trade khula raha (minute):", g(cut("hold_min", [0, 30, 60, 120, 240, 400], ["<30", "30-60", "60-120", "120-240", "240+"])),
+            "", "Volume kitna guna:", g(cut("vol_x", [0, 2.5, 3, 4, 6, 1e9], ["2-2.5", "2.5-3", "3-4", "4-6", "6+"])),
+            "", "1 lot ki cost (Rs):", g(cut("cost", [0, 5000, 10000, 15000, 20001], ["<5k", "5-10k", "10-15k", "15-20k"])),
+            "", "IV (volatility):", g(cut("iv", [0, 0.25, 0.35, 0.5, 1], ["<25%", "25-35%", "35-50%", "50%+"])),
+            "", "Expiry me kitne din:", g(cut("dte", [0, 10, 20, 30, 60], ["5-10", "10-20", "20-30", "30+"])),
+            "", "Hafte ka din:", g("day")]
+    if "rsi" in t and t["rsi"].notna().any():
+        t["rsi_b"] = pd.cut(t["rsi"], [0, 25, 35, 45, 55, 65, 75, 100])
+        out += ["", "RSI (entry candle):", g("rsi_b")]
+    out += ["", "Sabse zyada nuksaan wale stocks (top 10):",
+            t.groupby("stock")["pnl"].agg(trades="count", pnl="sum").sort_values("pnl").head(10).round(0).to_string(),
+            "", "Sabse zyada munafe wale stocks (top 10):",
+            t.groupby("stock")["pnl"].agg(trades="count", pnl="sum").sort_values("pnl", ascending=False).head(10).round(0).to_string()]
+    return out
+
+
 def report(tr: pd.DataFrame, n_stocks: int, nifty: pd.DataFrame, results=()):
     stamp = datetime.now(IST).strftime("%Y-%m-%d_%H%M")
     out = OUT / stamp
     out.mkdir(parents=True, exist_ok=True)
+    for n, t in results:   # har version ke trades alag file me (A, B, E, F...)
+        t.to_csv(out / f"trades_{n[:1]}{'_slip05' if '0.5' in n else ''}.csv", index=False)
     tr.to_csv(out / "trades.csv", index=False)
     tr["month"] = tr["entry_time"].dt.strftime("%Y-%m")
     tr["hour"] = tr["entry_time"].dt.strftime("%H:00")
@@ -237,7 +276,7 @@ def report(tr: pd.DataFrame, n_stocks: int, nifty: pd.DataFrame, results=()):
         "Mahine ke hisaab se P&L (Rs):",
         pd.DataFrame({n[:1] + (" 0.5%" if "0.5" in n else ""): t.groupby(t["entry_time"].dt.strftime("%Y-%m"))["pnl"].sum()
                       for n, t in results if len(t)}).fillna(0).round(0).to_string(),
-        "", "Neeche ki detail: version A (purane rules)", "",
+        "", "Neeche ki detail + LOSS ANALYSIS: LIVE version (E)", "",
         "KUL:      " + stats(tr),
         "1st half: " + stats(tr[tr["entry_time"] < half]),
         "2nd half: " + stats(tr[tr["entry_time"] >= half]),
@@ -249,6 +288,7 @@ def report(tr: pd.DataFrame, n_stocks: int, nifty: pd.DataFrame, results=()):
         "", "Sabse zyada trade wale stocks (top 15):",
         tr.groupby("stock")["pnl"].agg(trades="count", pnl="sum").sort_values("trades", ascending=False)
           .head(15).round(0).to_string(),
+        "", *loss_analysis(tr),
     ]
     text = "\n".join(lines) + "\n"
     (out / "REPORT.txt").write_text(text)
