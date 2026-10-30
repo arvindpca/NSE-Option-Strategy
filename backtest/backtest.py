@@ -71,7 +71,7 @@ def download():
 def daily_iv(df: pd.DataFrame) -> pd.Series:
     """Har din ke liye IV andaaza = pichhle 20 din ki daily volatility (annual) x IV_MULT."""
     d = df.groupby("date")["close"].last()
-    vol = np.log(d).diff().rolling(20, min_periods=10).std().shift(1) * math.sqrt(252) * IV_MULT
+    vol = np.log(d).diff().rolling(20, min_periods=10).std().shift(1) * math.sqrt(252) * getattr(C, "BT_IV_MULT", IV_MULT)
     return vol.clip(0.18, 0.90).fillna(0.30)
 
 
@@ -79,6 +79,13 @@ def simulate(day: pd.DataFrame, i: int, side: str, iv: float, lot: int):
     """day = ek din ki candles (reset index), i = signal candle.  Entry = signal candle ke close pe."""
     sig = day.iloc[i]
     t_entry = sig["time"] + pd.Timedelta(minutes=15)
+    entry_spot = sig["close"]
+    delay = int(getattr(C, "BT_ENTRY_DELAY", 0))   # live bot late hota hai: 1 = agli candle ke open pe entry
+    if delay:
+        if i + delay >= len(day):
+            return None
+        entry_spot = day.iloc[i + delay]["open"]
+        t_entry = day.iloc[i + delay]["time"]
     expiry = P.expiry_for(t_entry.date(), C.MIN_DAYS_TO_EXPIRY)
     step = P.strike_step(sig["close"])
     k = round(sig["close"] / step) * step
@@ -88,15 +95,15 @@ def simulate(day: pd.DataFrame, i: int, side: str, iv: float, lot: int):
 
     if iv > getattr(C, "MAX_IV", 9.9):
         return None
-    entry = prem(sig["close"], t_entry)
+    entry = prem(entry_spot, t_entry)
     if entry < C.MIN_PREMIUM or entry * lot > C.MAX_COST_PER_TRADE:
         return None
     pos = {"entry": entry, **X.new_levels(entry)}
     exit_px, reason, t_exit = None, None, None
-    for j in range(i + 1, len(day)):
+    for j in range(i + 1 + max(0, delay - 1), len(day)):
         c = day.iloc[j]
         t_end = c["time"] + pd.Timedelta(minutes=15)
-        o = prem(c["open"], c["time"])
+        o = entry if (delay and j == i + delay) else prem(c["open"], c["time"])
         hi_spot, lo_spot = (c["high"], c["low"]) if side == "CE" else (c["low"], c["high"])
         h, l = prem(hi_spot, t_end), prem(lo_spot, t_end)   # candle ke end ka time-decay (conservative)
         r = X.step(pos, o, h, l)
@@ -142,6 +149,11 @@ VARIANTS = [
     ("G+NoBE breakeven band", {**G_, "BREAKEVEN_AT": 9.0}),
     ("G+12   entry 12:00 tak", {**G_, "ENTRY_UPTO": "12:00"}),
     ("G@0.5% slippage 0.5%", {**G_, "SLIPPAGE_PCT": 0.005}),
+    # --- STRESS TEST: asli duniya backtest se kharab ho to?
+    ("E-LATE live jaisi late entry (1 candle)", {**E_, "BT_ENTRY_DELAY": 1}),
+    ("G-LATE late entry (1 candle)", {**G_, "BT_ENTRY_DELAY": 1}),
+    ("E-IV13 option mehenga (IV x1.3)", {**E_, "BT_IV_MULT": 1.3}),
+    ("E-SLIP2 slippage 2%", {**E_, "SLIPPAGE_PCT": 0.02}),
 ]
 # Loss analysis 29 Jun - 23 Oct 2026 ke data pe hua tha. Usse PEHLE ka data = "naya data" (rules banate waqt nahi dekha)
 SPLIT = pd.Timestamp(os.getenv("SPLIT_DATE", "2026-06-29"), tz=IST)
@@ -193,6 +205,7 @@ def run():
     base = {k: getattr(C, k) for k in ("USE_OR_FAIL_EXIT", "ENTRY_FROM", "SL_PCT", "TARGET_PCT", "BREAKEVEN_AT",
                                        "VOL_MULT", "MAX_COST_PER_TRADE", "SLIPPAGE_PCT", "REAL_CHARGES",
                                        "MAX_IV", "MIN_DAYS_TO_EXPIRY", "RSI_PE_MIN", "ENTRY_UPTO")}
+    base.update(BT_ENTRY_DELAY=0, BT_IV_MULT=IV_MULT)
     results = []
     for name, changes in VARIANTS:
         for k, v in {**base, **changes}.items():
